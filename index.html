@@ -8,42 +8,80 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@800;900&display=swap');
 
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-:root{
-  --safe-b: env(safe-area-inset-bottom, 0px);
-}
-/* Мультяшная обводка текста - работает везде */
-.outlined {
-  color: #fff;
-  -webkit-text-stroke: 5px #000;
-  paint-order: stroke fill;
-  font-weight: 900;
-  font-family: 'Nunito', system-ui, sans-serif;
-  line-height: 1;
-}
+:root{ --safe-b:env(safe-area-inset-bottom,0px); }
+
 body{
-  background:#87ceeb; /* небо как фолбэк */
+  background:#39393b;
   overflow:hidden;
   font-family:'Nunito','SF Pro Rounded',system-ui,sans-serif;
   color:#fff;
   touch-action:none;
 }
-#canvas{display:block;width:100vw;height:100vh;position:fixed;top:0;left:0;z-index:0;}
+#canvas{display:block;width:100vw;height:100vh;}
 
-/* ── SCREENS ── */
+/* ── SCREENS ────────────────────────────── */
 .screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;}
 .screen.hidden{display:none;}
 
-/* ── LOADING ── */
-#loading-screen{background:linear-gradient(180deg,#a8e6ff 0%,#d4f5ff 100%);}
-#loading-screen .loader-title{font-size:1.6rem;font-weight:900;color:#fff;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;margin-bottom:1.4rem;}
-.progress-bar{width:min(260px,70vw);height:10px;background:rgba(255,255,255,.4);border-radius:20px;overflow:hidden;border:2px solid #fff;}
-.progress-fill{height:100%;background:#f5a623;border-radius:20px;transition:width .3s;}
-.progress-label{font-size:.75rem;color:rgba(255,255,255,.8);margin-top:7px;font-weight:700;}
+/* ── CARTOON TEXT — CLEAN STROKE (no gap hack) ── */
+.cartoon-num{
+  font-family:'Nunito',system-ui,sans-serif;
+  font-weight:900;
+  color:#fff;
+  -webkit-text-stroke:5px #000;
+  paint-order:stroke fill;
+  line-height:1;
+}
 
-/* ── MAIN MENU ── */
+/* ── ICON HELPER — colored fill + black drop-shadow outline ── */
+/* Usage: wrapper gets the drop-shadow filter; inner div is the colored mask */
+.icon-wrap{
+  position:relative;
+  flex-shrink:0;
+  filter:
+    drop-shadow(3px 0 0 #000) drop-shadow(-3px 0 0 #000)
+    drop-shadow(0 3px 0 #000) drop-shadow(0 -3px 0 #000)
+    drop-shadow(2px 2px 0 #000) drop-shadow(-2px 2px 0 #000)
+    drop-shadow(2px -2px 0 #000) drop-shadow(-2px -2px 0 #000);
+}
+.icon-mask{
+  display:block;
+  width:100%;height:100%;
+  -webkit-mask-size:contain;
+  -webkit-mask-position:center;
+  -webkit-mask-repeat:no-repeat;
+  mask-size:contain;
+  mask-position:center;
+  mask-repeat:no-repeat;
+}
+
+/* ── LOADING ────────────────────────────── */
+#loading-screen{background:linear-gradient(180deg,#a8e6ff 0%,#d4f5ff 100%);}
+#loading-screen .loader-title{
+  font-size:1.7rem;font-weight:900;color:#fff;
+  -webkit-text-stroke:3px #000;paint-order:stroke fill;
+  margin-bottom:1.4rem;
+}
+.progress-bar{
+  width:min(260px,70vw);height:10px;
+  background:rgba(255,255,255,.4);border-radius:20px;overflow:hidden;
+  border:2.5px solid #000;box-shadow:0 2px 0 #000;
+}
+.progress-fill{height:100%;background:#f5a623;border-radius:20px;transition:width .3s;}
+.progress-label{font-size:.75rem;color:rgba(255,255,255,.85);margin-top:8px;font-weight:800;}
+
+/* ── MAIN MENU ────────────────────────── */
 #main-menu{background:linear-gradient(180deg,#a8e6ff 0%,#c5f0ff 100%);}
-#main-menu .logo{font-size:clamp(2.4rem,10vw,3.6rem);font-weight:900;color:#fff;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;margin-bottom:.3rem;letter-spacing:-.01em;}
-#main-menu .subtitle{font-size:.85rem;color:rgba(255,255,255,.85);font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:2.5rem;}
+#main-menu .logo{
+  font-size:clamp(2.4rem,10vw,3.6rem);font-weight:900;
+  color:#fff;-webkit-text-stroke:4px #000;paint-order:stroke fill;
+  margin-bottom:.3rem;letter-spacing:-.01em;
+}
+#main-menu .subtitle{
+  font-size:.85rem;color:rgba(255,255,255,.9);font-weight:800;
+  letter-spacing:.14em;text-transform:uppercase;margin-bottom:2.5rem;
+  -webkit-text-stroke:1px #000;paint-order:stroke fill;
+}
 .menu-btn{
   display:flex;align-items:center;justify-content:center;gap:10px;
   width:min(240px,72vw);padding:.9rem 1.6rem;margin:.35rem 0;
@@ -53,110 +91,156 @@ body{
   transition:transform .1s,box-shadow .1s;
 }
 .menu-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #000;}
-.menu-btn.primary{background:#f5a623;color:#fff;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;}
+.menu-btn.primary{
+  background:#f5a623;color:#fff;
+  -webkit-text-stroke:1.5px #000;paint-order:stroke fill;
+}
 .menu-btn .ico{flex-shrink:0;}
 
-/* ── CARTOON NUMBER (жирный с обводкой) ── */
-.cartoon-num{
-  font-family:'Nunito',system-ui,sans-serif;
-  font-weight:900;
-  color:#fff;
-  -webkit-text-stroke: 5px #000;
-  paint-order: stroke fill;
-  line-height:1;
-  position:relative;
-}
-
-/* ─── HUD ─── */
+/* ── HUD ────────────────────────────────── */
 #hud{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:50;}
 #hud.hidden{display:none;}
 
-/* ВЕРХ-ЛЕВО: сердце большое + число, молния + число */
+/* ВЕРХ-ЛЕВО */
 #hud-tl{
-  position:absolute;top:12px;left:10px;
-  display:flex;flex-direction:column;gap:2px;
+  position:absolute;top:14px;left:12px;
+  display:flex;flex-direction:column;gap:4px;
   pointer-events:none;
 }
-/* Ряд 1: сердце + "20" + [синий круг] + "0/20" */
-#hud-row1{display:flex;align-items:center;gap:4px;}
-#hud-heart{ width:64px; height:64px; flex-shrink:0; }
-#hud-lives{font-size:3.6rem;display:block;}
+#hud-row1{display:flex;align-items:center;gap:6px;}
+#hud-row2{display:flex;align-items:center;gap:6px;margin-top:2px;}
+
+/* Heart icon — 68px, red */
+#hud-heart{
+  width:68px;height:68px;
+  filter:
+    drop-shadow(3px 0 0 #000) drop-shadow(-3px 0 0 #000)
+    drop-shadow(0 3px 0 #000) drop-shadow(0 -3px 0 #000)
+    drop-shadow(2px 2px 0 #000) drop-shadow(-2px -2px 0 #000)
+    drop-shadow(2px -2px 0 #000) drop-shadow(-2px 2px 0 #000);
+}
+#hud-heart .icon-mask{
+  background:#ff4444;
+  -webkit-mask-image:url(assets/icons/ic_love_fill.png);
+  mask-image:url(assets/icons/ic_love_fill.png);
+}
+
+/* Lives number */
+#hud-lives{font-size:3.6rem;}
+
+/* Wave badge — blue circle */
 #hud-wave-badge{
-  width:32px;height:32px;
-  background:#2979ff;
-  border-radius:50%;border:2.5px solid #000;
-  box-shadow:0 2px 0 #000;
+  width:56px;height:56px;
+  background:#2979ff;border-radius:50%;
+  border:3px solid #000;box-shadow:0 3px 0 #000;
   display:flex;align-items:center;justify-content:center;
-  margin-left:6px;flex-shrink:0;
+  flex-shrink:0;margin-left:4px;
 }
-#hud-wave-badge img{width:16px;height:16px; filter: brightness(3) contrast(1.5); }
-#hud-gold{font-size:1rem;margin-left:4px;display:block;}
+#hud-wave-badge .badge-icon{
+  width:28px;height:28px;
+  background:#fff;
+  -webkit-mask-image:url(assets/icons/ic_star_fill.png);
+  mask-image:url(assets/icons/ic_star_fill.png);
+  -webkit-mask-size:contain;mask-size:contain;
+  -webkit-mask-position:center;mask-position:center;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+}
 
-/* Ряд 2: молния + золото/ресурс */
-#hud-row2{display:flex;align-items:center;gap:4px;margin-top:2px;}
+/* Wave/gold number */
+#hud-gold{font-size:1.85rem;}
+
+/* Lightning bolt icon — 46px, yellow */
 #hud-bolt{
-  width:50px;height:50px;
-  background:url(assets/icons/ic_energy.png) center/contain no-repeat;
-  /* Насыщенный жёлтый — saturate(12) даёт чистый яркий жёлтый */
-  filter: sepia(1) saturate(12) hue-rotate(8deg) brightness(1.1);
+  width:46px;height:46px;
+  filter:
+    drop-shadow(2.5px 0 0 #000) drop-shadow(-2.5px 0 0 #000)
+    drop-shadow(0 2.5px 0 #000) drop-shadow(0 -2.5px 0 #000)
+    drop-shadow(2px 2px 0 #000) drop-shadow(-2px -2px 0 #000)
+    drop-shadow(2px -2px 0 #000) drop-shadow(-2px 2px 0 #000);
 }
-#hud-wave-text{font-size:2.8rem;display:block;}
+#hud-bolt .icon-mask{
+  background:#ffd52b;
+  -webkit-mask-image:url(assets/icons/ic_energy_fill.png);
+  mask-image:url(assets/icons/ic_energy_fill.png);
+  -webkit-mask-size:contain;mask-size:contain;
+  -webkit-mask-position:center;mask-position:center;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+}
+#hud-wave-text{font-size:2.8rem;}
 
-/* ВЕРХ-ПРАВО: X кнопка + зелёная кнопка */
+/* ВЕРХ-ПРАВО */
 #hud-tr{
-  position:absolute;top:12px;right:12px;
+  position:absolute;top:14px;right:12px;
   display:flex;flex-direction:column;align-items:center;gap:10px;
   pointer-events:auto;
 }
 .circ-btn{
-  width:60px;height:60px;
-  border-radius:50%;
-  border:4px solid #000;
-  outline:3px solid #fff;
-  outline-offset:-7px;
+  width:60px;height:60px;border-radius:50%;
+  border:3px solid #000;
   display:flex;align-items:center;justify-content:center;
-  cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.5);
+  cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.55);
   transition:transform .1s,box-shadow .1s;flex-shrink:0;
 }
-.circ-btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.5);}
-.circ-btn img{width:30px;height:30px;}
+.circ-btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.55);}
+/* Exit button — white circle, black X */
 #btn-exit{background:#fff;}
-/* Крестик: белая кнопка, иконка покрашена в #f54242 через mask */
-/* btn-exit icon handled via inline div mask */
+#btn-exit .circ-icon{
+  width:28px;height:28px;background:#222;
+  -webkit-mask-image:url(assets/icons/ic_close_fill.png);
+  mask-image:url(assets/icons/ic_close_fill.png);
+  -webkit-mask-size:contain;mask-size:contain;
+  -webkit-mask-position:center;mask-position:center;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+}
+/* Start wave button — green circle */
 #btn-start-wave{background:#4ac94a;}
-/* Белая иконка с чёрным border на зелёном фоне */
-#btn-start-wave img{ filter: brightness(3) contrast(1.5); }
+#btn-start-wave .circ-icon{
+  width:28px;height:28px;background:#fff;
+  -webkit-mask-image:url(assets/icons/ic_target_fill.png);
+  mask-image:url(assets/icons/ic_target_fill.png);
+  -webkit-mask-size:contain;mask-size:contain;
+  -webkit-mask-position:center;mask-position:center;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+}
 
-/* НИЗ-ПРАВО: cam btn + speed btn */
+/* НИЗ-ПРАВО */
 #hud-br{
   position:absolute;
-  bottom:calc(var(--panel-h,220px) + 14px);
+  bottom:calc(var(--panel-h,215px) + 14px);
   right:12px;
   display:flex;flex-direction:column;align-items:center;gap:10px;
   pointer-events:auto;
 }
 #cam-mode-btn{
-  width:58px;height:58px;background:#fff;
+  width:60px;height:60px;background:#fff;
   border-radius:50%;border:3px solid #000;
   display:flex;align-items:center;justify-content:center;
-  cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.5);
+  cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.55);
   transition:transform .1s,box-shadow .1s;
 }
-#cam-mode-btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.5);}
-#cam-mode-btn img{width:30px;height:30px; filter: brightness(0.3) contrast(2); }
+#cam-mode-btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.55);}
+#cam-mode-btn .circ-icon{
+  width:28px;height:28px;background:#222;
+  -webkit-mask-image:url(assets/icons/ic_cursor_fill.png);
+  mask-image:url(assets/icons/ic_cursor_fill.png);
+  -webkit-mask-size:contain;mask-size:contain;
+  -webkit-mask-position:center;mask-position:center;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+}
 #cam-mode-btn.hidden{display:none;}
 #btn-speed{
-  width:58px;height:58px;
+  width:60px;height:60px;
   background:#f5a623;border-radius:50%;border:3px solid #000;
   display:flex;align-items:center;justify-content:center;
-  cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.5);
+  cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.55);
   transition:transform .1s,box-shadow .1s;
-  font-family:'Nunito',sans-serif;font-weight:900;font-size:1.1rem;
-  color:#fff;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;
+  font-family:'Nunito',sans-serif;font-weight:900;font-size:1.15rem;
+  color:#fff;
+  -webkit-text-stroke:2px #000;paint-order:stroke fill;
 }
-#btn-speed:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.5);}
+#btn-speed:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.55);}
 
-/* ── BOTTOM PANEL ── */
+/* ── BOTTOM PANEL ─────────────────────── */
 #bottom-panel{
   position:fixed;bottom:0;left:0;right:0;
   background:#fff5e0;
@@ -167,36 +251,47 @@ body{
 }
 #bottom-panel.hidden{display:none;}
 
-/* Табы: SHOP + TOWERS + ANIMAL в одну строку */
 .tab-bar{
   display:flex;align-items:center;gap:8px;
   padding:10px 12px 8px;
 }
 .tab-shop,.tab-btn{
   display:flex;align-items:center;justify-content:center;gap:6px;
-  padding:9px 16px;
-  border-radius:22px;border:3px solid #000;
+  padding:9px 16px;border-radius:22px;border:3px solid #000;
   font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:900;
   cursor:pointer;box-shadow:0 3px 0 #000;
-  transition:transform .1s,box-shadow .1s;
-  white-space:nowrap;
+  transition:transform .1s,box-shadow .1s;white-space:nowrap;
 }
 .tab-shop:active,.tab-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #000;}
-.tab-shop{background:#f5a623;color:#fff;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;}
-/* ic_store.png: white fill + black border on orange — brighten grey to white, keep black outline */
-.tab-shop img{width:22px;height:22px;filter:brightness(3) contrast(1.5);}
-.tab-btn img{width:20px;height:20px;filter:none;}
+/* Shop tab — active/amber */
+.tab-shop{
+  background:#f5a623;color:#fff;
+  -webkit-text-stroke:1.5px #000;paint-order:stroke fill;
+}
+/* Shop icon inside tab */
+.tab-shop .tab-ico{
+  width:22px;height:22px;background:#fff;
+  -webkit-mask-image:url(assets/icons/ic_store_fill.png);
+  mask-image:url(assets/icons/ic_store_fill.png);
+  -webkit-mask-size:contain;mask-size:contain;
+  -webkit-mask-position:center;mask-position:center;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  flex-shrink:0;
+}
 .tab-btn{background:#fff5e0;color:#333;}
-.tab-btn.active{background:#f5a623;color:#fff;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;}
+.tab-btn.active{
+  background:#f5a623;color:#fff;
+  -webkit-text-stroke:1.5px #000;paint-order:stroke fill;
+}
 .tab-spacer{flex:1;}
 
 .tab-content{display:none;padding:4px 10px 10px;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;}
 .tab-content.active{display:block;}
 
-/* карточки юнитов */
+/* Item cards */
 .item-card{
   display:inline-flex;flex-direction:column;align-items:center;
-  width:80px;margin-right:8px;padding:6px 4px 6px;
+  width:72px;margin-right:8px;padding:8px 4px 6px;
   background:#fff;border:3px solid #000;border-radius:18px;
   cursor:pointer;vertical-align:top;
   box-shadow:0 3px 0 #000;transition:transform .1s,box-shadow .1s;
@@ -204,12 +299,17 @@ body{
 .item-card:active{transform:translateY(2px);box-shadow:0 1px 0 #000;}
 .item-card.selected{background:#fff3d0;border-color:#f5a623;}
 .item-card.disabled{opacity:.38;pointer-events:none;}
-.item-icon-wrap{width:52px;height:52px;display:flex;align-items:center;justify-content:center;margin-bottom:2px;}
-.item-icon-wrap img{width:52px;height:52px;object-fit:contain;}
+.item-icon-wrap{width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin-bottom:3px;}
+.item-icon-wrap img{width:36px;height:36px;object-fit:contain;}
 .item-name{font-size:.58rem;font-weight:900;text-align:center;color:#222;white-space:normal;line-height:1.2;}
-.item-cost{font-size:.65rem;font-weight:900;color:#f5a623;-webkit-text-stroke:3px #000;paint-order:stroke fill;margin-top:1px;}
+/* Cost with proper stroke */
+.item-cost{
+  font-size:.65rem;font-weight:900;color:#f5a623;
+  -webkit-text-stroke:1px #000;paint-order:stroke fill;
+  margin-top:1px;
+}
 
-/* ── TOWER INFO ── */
+/* ── TOWER INFO ───────────────────────── */
 #tower-info{
   position:fixed;bottom:0;left:0;right:0;
   background:#fff5e0;border-radius:28px 28px 0 0;
@@ -220,10 +320,7 @@ body{
 }
 #tower-info.visible{transform:translateY(0);}
 #tower-info.hidden{transform:translateY(100%);}
-#tower-info h3{
-  font-size:1.1rem;font-weight:900;color:#222;
-  text-align:center;margin-bottom:10px;
-}
+#tower-info h3{font-size:1.1rem;font-weight:900;color:#222;text-align:center;margin-bottom:10px;}
 .ti-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;}
 .ti-stat{
   display:flex;justify-content:space-between;align-items:center;
@@ -240,37 +337,52 @@ body{
 }
 .ti-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #000;}
 .ti-btn img{width:18px;height:18px;}
-.ti-upgrade img,.ti-sell img{filter:brightness(0) invert(1);}
-.ti-upgrade{background:#4ac94a;color:#fff;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;}
-.ti-sell{background:#f5a623;color:#fff;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;}
+.ti-upgrade{
+  background:#4ac94a;color:#fff;
+  -webkit-text-stroke:1px #000;paint-order:stroke fill;
+}
+.ti-sell{
+  background:#f5a623;color:#fff;
+  -webkit-text-stroke:1px #000;paint-order:stroke fill;
+}
 .ti-close{background:#fff;color:#333;}
-.ti-close img{filter:none;}
 
-/* ── WAVE NOTIFY ── */
+/* ── WAVE NOTIFY ──────────────────────── */
 #wave-notify{position:fixed;top:35%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:200;pointer-events:none;transition:opacity .5s;}
 #wave-notify.hidden{opacity:0;}
-#wave-notify .wn-title{font-size:clamp(2rem,9vw,3.5rem);font-weight:900;color:#fff;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;}
-#wave-notify .wn-sub{font-size:.9rem;color:rgba(255,255,255,.85);font-weight:700;margin-top:4px;}
+#wave-notify .wn-title{
+  font-size:clamp(2rem,9vw,3.5rem);font-weight:900;color:#fff;
+  -webkit-text-stroke:4px #000;paint-order:stroke fill;
+}
+#wave-notify .wn-sub{font-size:.9rem;color:rgba(255,255,255,.9);font-weight:800;margin-top:4px;}
 
-/* ── GAME OVER / WIN ── */
+/* ── GAME OVER / WIN ──────────────────── */
 #game-over-screen{background:rgba(0,0,0,.7);backdrop-filter:blur(8px);}
-#game-over-screen h1{font-size:clamp(2.5rem,10vw,4rem);font-weight:900;color:#ff6b6b;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;margin-bottom:.8rem;}
+#game-over-screen h1{
+  font-size:clamp(2.5rem,10vw,4rem);font-weight:900;color:#ff6b6b;
+  -webkit-text-stroke:4px #000;paint-order:stroke fill;
+  margin-bottom:.8rem;
+}
 #win-screen{background:rgba(0,0,0,.7);backdrop-filter:blur(8px);}
-#win-screen h1{font-size:clamp(2.5rem,10vw,4rem);font-weight:900;color:#4ac94a;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;margin-bottom:.8rem;}
-.result-info{color:rgba(255,255,255,.85);font-size:.95rem;font-weight:700;margin-bottom:1.5rem;}
+#win-screen h1{
+  font-size:clamp(2.5rem,10vw,4rem);font-weight:900;color:#4ac94a;
+  -webkit-text-stroke:4px #000;paint-order:stroke fill;
+  margin-bottom:.8rem;
+}
+.result-info{color:rgba(255,255,255,.9);font-size:.95rem;font-weight:800;margin-bottom:1.5rem;}
 
-/* ── TOOLTIP ── */
+/* ── TOOLTIP ──────────────────────────── */
 #tooltip{position:fixed;background:#fff;border:3px solid #000;border-radius:14px;padding:8px 12px;font-size:.75rem;z-index:300;pointer-events:none;max-width:180px;box-shadow:0 3px 0 #000;}
 #tooltip.hidden{display:none;}
 #tooltip h4{color:#222;margin-bottom:3px;font-weight:900;}
-#tooltip p{color:#666;line-height:1.35;font-weight:700;}
+#tooltip p{color:#555;line-height:1.35;font-weight:700;}
 
-/* ── EDITOR ── */
+/* ── EDITOR ───────────────────────────── */
 #editor-screen{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;background:transparent;pointer-events:none;}
 #editor-screen.hidden{display:none;}
 #ed-topbar{
   display:flex;align-items:center;gap:5px;padding:7px 9px;
-  background:rgba(255,245,224,.95);border-bottom:3px solid #000;
+  background:rgba(255,245,224,.96);border-bottom:3px solid #000;
   flex-shrink:0;pointer-events:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;
 }
 #ed-topbar::-webkit-scrollbar{display:none;}
@@ -284,21 +396,28 @@ body{
   box-shadow:0 2px 0 #000;transition:transform .1s,box-shadow .1s;
 }
 .ed-btn:active{transform:translateY(2px);box-shadow:none;}
-.ed-btn img{width:16px;height:16px;filter:brightness(0);}
+.ed-btn img{width:16px;height:16px;}
+.ed-btn .btn-ico{
+  width:16px;height:16px;background:#222;
+  -webkit-mask-size:contain;mask-size:contain;
+  -webkit-mask-position:center;mask-position:center;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  flex-shrink:0;
+}
 .ed-btn.gold{background:#f5a623;color:#fff;}
-.ed-btn.gold img{filter:brightness(0) invert(1);}
+.ed-btn.gold .btn-ico{background:#fff;}
 .ed-btn.green{background:#4ac94a;color:#fff;}
-.ed-btn.green img{filter:brightness(0) invert(1);}
+.ed-btn.green .btn-ico{background:#fff;}
 .ed-btn.red{background:#ff6b6b;color:#fff;}
-.ed-btn.red img{filter:brightness(0) invert(1);}
-.ed-btn.active-on{background:#7c9eff;color:#fff;border-color:#000;}
-.ed-btn.active-on img{filter:brightness(0) invert(1);}
-.ed-btn.erase-on{background:#ff6b6b;color:#fff;border-color:#000;}
-.ed-btn.erase-on img{filter:brightness(0) invert(1);}
+.ed-btn.red .btn-ico{background:#fff;}
+.ed-btn.active-on{background:#7c9eff;color:#fff;}
+.ed-btn.active-on .btn-ico{background:#fff;}
+.ed-btn.erase-on{background:#ff6b6b;color:#fff;}
+.ed-btn.erase-on .btn-ico{background:#fff;}
 .ed-spacer{flex:1;min-width:3px;}
 #ed-body{display:flex;flex:1;overflow:hidden;}
 #ed-palette{
-  width:70px;background:rgba(255,245,224,.92);border-right:3px solid #000;
+  width:70px;background:rgba(255,245,224,.93);border-right:3px solid #000;
   overflow-y:auto;flex-shrink:0;padding:4px 3px;
   pointer-events:auto;-webkit-overflow-scrolling:touch;
 }
@@ -309,23 +428,23 @@ body{
   padding:5px 2px;margin-bottom:3px;
   background:#fff;border:2px solid #ddd;border-radius:12px;
   cursor:pointer;pointer-events:auto;text-align:center;
-  transition:all .1s;box-shadow:0 2px 0 #ccc;
+  box-shadow:0 2px 0 #ccc;transition:all .1s;
 }
 .ed-tile-btn:active{transform:translateY(1px);box-shadow:none;}
 .ed-tile-btn.active{border-color:#f5a623;background:#fff3d0;box-shadow:0 2px 0 #f5a623;}
 .ed-tile-icon{width:28px;height:28px;display:flex;align-items:center;justify-content:center;}
-.ed-tile-icon img{width:22px;height:22px;filter:none;opacity:.7;}
+.ed-tile-icon img{width:22px;height:22px;filter:brightness(0) opacity(.6);}
 .ed-tile-label{font-size:.45rem;color:#888;margin-top:2px;line-height:1.2;font-weight:700;}
 #ed-canvas-area{flex:1;position:relative;}
 #ed-info{
   position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
-  background:rgba(255,245,224,.9);color:#555;
-  font-size:.7rem;font-weight:700;
+  background:rgba(255,245,224,.92);color:#444;
+  font-size:.7rem;font-weight:800;
   padding:5px 14px;border-radius:22px;pointer-events:none;z-index:10;
   white-space:nowrap;border:2px solid #000;box-shadow:0 2px 0 #000;
 }
 
-/* ── MAPS MODAL ── */
+/* ── MAPS MODAL ───────────────────────── */
 #my-maps-modal{background:rgba(0,0,0,.5);backdrop-filter:blur(8px);}
 .maps-modal-inner{
   background:#fff5e0;border-radius:24px;border:3px solid #000;
@@ -350,53 +469,45 @@ body{
   <div class="logo">Tower Defense</div>
   <div class="subtitle">3D Strategy</div>
   <button class="menu-btn primary" id="btn-play">
-    <img class="ico" src="assets/icons/ic_target.png" style="width:22px;height:22px;filter:brightness(0) invert(1)">
-    Play
+    ▶ Play
   </button>
   <button class="menu-btn" id="btn-maps">
-    <img class="ico" src="assets/icons/ic_map.png" style="width:22px;height:22px;filter:brightness(0)">
-    My Maps
+    🗺 My Maps
   </button>
   <button class="menu-btn" id="btn-editor">
-    <img class="ico" src="assets/icons/ic_settings.png" style="width:22px;height:22px;filter:brightness(0)">
-    Map Editor
+    🛠 Map Editor
   </button>
 </div>
 
 <!-- HUD (поверх canvas, абсолютные позиции) -->
 <div id="hud" class="hidden">
 
-  <!-- ВЕРХ-ЛЕВО: сердце + жизни + значок волны + голд + строка молния -->
+  <!-- ВЕРХ-ЛЕВО -->
   <div id="hud-tl">
     <div id="hud-row1">
-      <img id="hud-heart" src="assets/icons/ic_love.png">
+      <!-- Сердце: wrapper с drop-shadow outline, inner — CSS mask красного цвета -->
+      <div id="hud-heart"><div class="icon-mask"></div></div>
       <span class="cartoon-num" id="hud-lives">20</span>
-      <div id="hud-wave-badge">
-        <img src="assets/icons/ic_star.png" alt="">
-      </div>
+      <!-- Синий значок волны -->
+      <div id="hud-wave-badge"><div class="badge-icon"></div></div>
       <span class="cartoon-num" id="hud-gold">0/20</span>
     </div>
     <div id="hud-row2">
-      <div id="hud-bolt"></div>
+      <!-- Молния: wrapper с drop-shadow outline, inner — CSS mask жёлтого цвета -->
+      <div id="hud-bolt"><div class="icon-mask"></div></div>
       <span class="cartoon-num" id="hud-wave-text">300</span>
     </div>
   </div>
 
-  <!-- ВЕРХ-ПРАВО: X + старт волны -->
+  <!-- ВЕРХ-ПРАВО -->
   <div id="hud-tr">
-    <button class="circ-btn" id="btn-exit">
-      <img src="assets/icons/ic_close.png" style="width:28px;height:28px;">
-    </button>
-    <button class="circ-btn" id="btn-start-wave">
-      <img src="assets/icons/ic_target.png" alt="">
-    </button>
+    <button class="circ-btn" id="btn-exit"><div class="circ-icon"></div></button>
+    <button class="circ-btn" id="btn-start-wave"><div class="circ-icon"></div></button>
   </div>
 
-  <!-- НИЗ-ПРАВО: режим камеры + скорость -->
+  <!-- НИЗ-ПРАВО -->
   <div id="hud-br">
-    <button id="cam-mode-btn" class="hidden">
-      <img src="assets/icons/ic_cursor.png" alt="">
-    </button>
+    <button id="cam-mode-btn" class="hidden"><div class="circ-icon"></div></button>
     <button id="btn-speed">1x</button>
   </div>
 
@@ -407,7 +518,7 @@ body{
 <div id="bottom-panel" class="hidden">
   <div class="tab-bar">
     <div class="tab-shop" id="tab-shop-btn">
-      <img src="assets/icons/ic_store.png" alt="">
+      <div class="tab-ico"></div>
       SHOP
     </div>
     <div class="tab-btn active" data-tab="towers">TOWERS</div>
@@ -427,15 +538,9 @@ body{
     <div class="ti-stat"><span>Speed</span><span id="ti-speed">0</span></div>
   </div>
   <div class="ti-btns">
-    <button class="ti-btn ti-upgrade" id="btn-upgrade">
-      <img src="assets/icons/ic_plus.png" alt=""> Upgrade
-    </button>
-    <button class="ti-btn ti-sell" id="btn-sell">
-      <img src="assets/icons/ic_star.png" alt="" style="filter:brightness(0) invert(1)"> Sell
-    </button>
-    <button class="ti-btn ti-close" id="btn-deselect">
-      <img src="assets/icons/ic_close.png" alt=""> Close
-    </button>
+    <button class="ti-btn ti-upgrade" id="btn-upgrade">⬆ Upgrade</button>
+    <button class="ti-btn ti-sell" id="btn-sell">💰 Sell</button>
+    <button class="ti-btn ti-close" id="btn-deselect">✕ Close</button>
   </div>
 </div>
 
@@ -450,10 +555,10 @@ body{
   <h1>Game Over</h1>
   <div class="result-info" id="go-info">Wave: 0</div>
   <button class="menu-btn primary" id="btn-go-retry">
-    <img src="assets/icons/ic_refresh.png" style="width:22px;filter:brightness(0) invert(1)"> Retry
+    🔄 Retry
   </button>
   <button class="menu-btn" id="btn-go-menu">
-    <img src="assets/icons/ic_home.png" style="width:22px;filter:brightness(0)"> Menu
+    🏠 Menu
   </button>
 </div>
 
@@ -791,11 +896,83 @@ const TILE_END = 7;
 // COORDINATE: row=z (south+), col=x (east+)
 // corner-round rot=0 connects NORTH(row-1) and EAST(col+1)
 // Proof: road verts reach +x edge and -z edge at boundary
-// ── DEFAULT MAP (твоя карта "base") ──────────────────────────────────────
-const DEFAULT_MAP      = [[0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 5, 0, 0, 0, 1, 2, 1, 1, 1, 4, 1, 4, 1, 1, 0, 0, 0], [0, 0, 5, 4, 0, 0, 0, 0, 2, 0, 4, 4, 0, 5, 0, 1, 4, 1, 0, 0], [1, 0, 0, 1, 1, 1, 1, 1, 2, 5, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0], [4, 0, 0, 1, 0, 0, 0, 1, 2, 1, 1, 1, 1, 1, 1, 1, 5, 4, 0, 0], [2, 2, 0, 1, 1, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 1, 1, 0, 4, 0], [5, 2, 2, 2, 2, 3, 2, 2, 2, 0, 0, 0, 0, 0, 4, 0, 1, 1, 0, 5], [4, 0, 1, 1, 1, 1, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0], [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0], [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 0, 1, 4, 0], [0, 0, 1, 0, 0, 4, 0, 0, 0, 0, 5, 4, 0, 5, 1, 0, 0, 1, 0, 4], [0, 0, 1, 0, 0, 0, 0, 0, 4, 0, 4, 0, 0, 0, 0, 4, 0, 1, 0, 0], [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 3, 2, 0], [4, 0, 1, 4, 0, 0, 0, 0, 4, 0, 0, 0, 1, 1, 1, 0, 0, 1, 5, 0], [0, 0, 1, 0, 5, 0, 0, 5, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0], [0, 0, 6, 0, 0, 0, 0, 4, 7, 1, 1, 0, 0, 0, 0, 0, 0, 0, 4, 0], [0, 0, 4, 0, 0, 0, 0, 5, 4, 5, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0], [0, 5, 0, 0, 4, 0, 0, 0, 0, 1, 1, 4, 5, 0, 4, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]];
-const DEFAULT_CELL_DATA = {"10,10": {"modelKey": "snow_tile_rock", "rot": 0, "tileType": 5, "tint": null}, "2,2": {"modelKey": "tile_rock", "rot": 0, "tileType": 5, "tint": null}, "3,2": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "3,3": {"modelKey": "tile_corner_round", "rot": 0, "tileType": 1, "tint": null}, "2,3": {"modelKey": "tile_tree", "rot": 0, "tileType": 4, "tint": null}, "2,4": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "3,4": {"modelKey": "tile_straight", "rot": 7.853981633974483, "tileType": 1, "tint": null}, "4,4": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,3": {"modelKey": "tile_straight", "rot": 6.283185307179586, "tileType": 1, "tint": null}, "4,2": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "5,2": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "5,3": {"modelKey": "tile_corner_round", "rot": -4.71238898038469, "tileType": 1, "tint": null}, "5,4": {"modelKey": "tile_straight", "rot": 4.71238898038469, "tileType": 1, "tint": null}, "5,5": {"modelKey": "tile_corner_round", "rot": -7.853981633974483, "tileType": 1, "tint": null}, "4,5": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "3,5": {"modelKey": "tile_straight", "rot": 7.853981633974483, "tileType": 1, "tint": null}, "2,5": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "2,6": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "3,6": {"modelKey": "tile_straight", "rot": 7.853981633974483, "tileType": 1, "tint": null}, "4,6": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "5,6": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "6,2": {"modelKey": "tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "6,3": {"modelKey": "tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "6,4": {"modelKey": "tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "6,5": {"modelKey": "tile_river_bridge", "rot": 1.5707963267948966, "tileType": 3, "tint": null}, "6,6": {"modelKey": "tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "7,3": {"modelKey": "tile_straight", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "7,4": {"modelKey": "tile_straight", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "7,5": {"modelKey": "tile_corner_round", "rot": -3.141592653589793, "tileType": 1, "tint": null}, "7,6": {"modelKey": "tile_tree_double", "rot": 1.5707963267948966, "tileType": 4, "tint": null}, "6,7": {"modelKey": "tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "5,7": {"modelKey": "tile_corner_round", "rot": -4.71238898038469, "tileType": 1, "tint": null}, "4,7": {"modelKey": "tile_straight", "rot": 9.42477796076938, "tileType": 1, "tint": null}, "3,7": {"modelKey": "tile_corner_round", "rot": -7.853981633974483, "tileType": 1, "tint": null}, "2,7": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,8": {"modelKey": "tile_river_straight", "rot": 3.141592653589793, "tileType": 2, "tint": null}, "3,8": {"modelKey": "tile_river_straight", "rot": 3.141592653589793, "tileType": 2, "tint": null}, "5,8": {"modelKey": "tile_river_bridge", "rot": 0, "tileType": 3, "tint": null}, "6,8": {"modelKey": "tile_river_corner", "rot": 3.141592653589793, "tileType": 2, "tint": null}, "7,8": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "7,7": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "8,7": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "8,6": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "8,5": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "8,4": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "8,3": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "7,2": {"modelKey": "tile_corner_round", "rot": 0, "tileType": 1, "tint": null}, "2,8": {"modelKey": "tile_river_slope", "rot": 0, "tileType": 2, "tint": null}, "2,9": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "2,10": {"modelKey": "tile_tree", "rot": 0, "tileType": 4, "tint": null}, "3,9": {"modelKey": "tile_rock", "rot": 0, "tileType": 5, "tint": null}, "3,10": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,9": {"modelKey": "tile_corner_round", "rot": -6.283185307179586, "tileType": 1, "tint": null}, "2,11": {"modelKey": "tile_tree_quad", "rot": 0, "tileType": 4, "tint": null}, "3,11": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,10": {"modelKey": "tile_straight_slope", "rot": 4.71238898038469, "tileType": 1, "tint": null}, "4,11": {"modelKey": "tile_straight_slope", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "1,7": {"modelKey": "tile_slope", "rot": 6.283185307179586, "tileType": 1, "tint": null}, "1,8": {"modelKey": "tile_river_slope", "rot": 3.141592653589793, "tileType": 2, "tint": null}, "1,9": {"modelKey": "tile_slope", "rot": 6.283185307179586, "tileType": 1, "tint": null}, "1,10": {"modelKey": "tile_slope", "rot": 6.283185307179586, "tileType": 1, "tint": null}, "1,11": {"modelKey": "tile_slope", "rot": 0, "tileType": 1, "tint": null}, "1,12": {"modelKey": "tile_tree", "rot": 0, "tileType": 4, "tint": null}, "2,12": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "2,13": {"modelKey": "tile_rock", "rot": 1.5707963267948966, "tileType": 5, "tint": null}, "3,13": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,13": {"modelKey": "tile_straight", "rot": 14.137166941154069, "tileType": 1, "tint": null}, "2,14": {"modelKey": "tower_square_build_a", "rot": 0, "tileType": 0, "tint": null}, "3,14": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,14": {"modelKey": "tile_straight", "rot": 14.137166941154069, "tileType": 1, "tint": null}, "3,15": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,15": {"modelKey": "tile_corner_round", "rot": -1.5707963267948966, "tileType": 1, "tint": null}, "3,12": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "5,14": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "5,15": {"modelKey": "tile_corner_round", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "3,16": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,16": {"modelKey": "tile_crystal", "rot": 0, "tileType": 5, "tint": null}, "5,16": {"modelKey": "tile_corner_round", "rot": 4.71238898038469, "tileType": 1, "tint": null}, "3,17": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,17": {"modelKey": "tile_tree", "rot": 0, "tileType": 4, "tint": null}, "5,17": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "15,10": {"modelKey": "snow_tile_corner_round", "rot": 3.141592653589793, "tileType": 1, "tint": null}, "15,9": {"modelKey": "snow_tile_straight", "rot": 4.71238898038469, "tileType": 1, "tint": null}, "14,9": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "14,10": {"modelKey": "snow_tile_corner_round", "rot": 0, "tileType": 1, "tint": null}, "14,11": {"modelKey": "snow_tile_bump", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "15,11": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "15,12": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "14,12": {"modelKey": "snow_tile_corner_round", "rot": 3.141592653589793, "tileType": 1, "tint": null}, "14,13": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "15,13": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "15,14": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "14,14": {"modelKey": "snow_tile_corner_round", "rot": 7.853981633974483, "tileType": 1, "tint": null}, "13,13": {"modelKey": "snow_tile_straight", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "13,12": {"modelKey": "snow_tile_corner_round", "rot": 6.283185307179586, "tileType": 1, "tint": null}, "13,11": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "12,12": {"modelKey": "snow_tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "12,13": {"modelKey": "snow_tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "12,14": {"modelKey": "snow_tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "13,14": {"modelKey": "snow_tile_corner_round", "rot": 10.995574287564276, "tileType": 1, "tint": null}, "12,15": {"modelKey": "snow_tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "13,15": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "11,14": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "13,10": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "12,10": {"modelKey": "snow_tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "12,11": {"modelKey": "snow_tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "11,11": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "11,10": {"modelKey": "snow_tile_tree", "rot": 0, "tileType": 4, "tint": null}, "11,12": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "13,9": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "13,8": {"modelKey": "snow_tile_tree", "rot": 0, "tileType": 4, "tint": null}, "14,8": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "15,8": {"modelKey": "snow_tile_end_round", "rot": 1.5707963267948966, "tileType": 7, "tint": null}, "11,13": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "14,15": {"modelKey": "snow_tile_straight", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "15,15": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "10,11": {"modelKey": "snow_tile_tree_double", "rot": 1.5707963267948966, "tileType": 4, "tint": null}, "10,12": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "10,13": {"modelKey": "snow_tile_crystal", "rot": 1.5707963267948966, "tileType": 5, "tint": null}, "10,14": {"modelKey": "snow_tile_slope", "rot": 0, "tileType": 1, "tint": null}, "11,15": {"modelKey": "snow_tile_tree_double", "rot": 1.5707963267948966, "tileType": 4, "tint": null}, "12,16": {"modelKey": "snow_tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "13,16": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "14,16": {"modelKey": "snow_tile_bump", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "15,16": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "14,7": {"modelKey": "snow_tile_crystal", "rot": 0, "tileType": 5, "tint": null}, "15,7": {"modelKey": "snow_tile_tree_double", "rot": 0, "tileType": 4, "tint": null}, "14,6": {"modelKey": "snow_wood_structure_high", "rot": 0, "tileType": 0, "tint": null}, "15,6": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "13,17": {"modelKey": "snow_tile_straight", "rot": 0, "tileType": 1, "tint": null}, "14,17": {"modelKey": "snow_tile_corner_round", "rot": 15.707963267948966, "tileType": 1, "tint": null}, "15,17": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "16,17": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "16,16": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "16,15": {"modelKey": "snow_tile_slope", "rot": 7.853981633974483, "tileType": 1, "tint": null}, "16,14": {"modelKey": "snow_tile_slope", "rot": 4.71238898038469, "tileType": 1, "tint": null}, "16,13": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "16,12": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "16,11": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "16,10": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "16,9": {"modelKey": "snow_tile_rock", "rot": 0, "tileType": 5, "tint": null}, "16,8": {"modelKey": "snow_tile_tree", "rot": 0, "tileType": 4, "tint": null}, "16,7": {"modelKey": "snow_tile_crystal", "rot": 0, "tileType": 5, "tint": null}, "17,8": {"modelKey": "snow_wood_structure", "rot": 0, "tileType": 0, "tint": null}, "17,9": {"modelKey": "snow_tile_slope", "rot": 9.42477796076938, "tileType": 1, "tint": null}, "17,10": {"modelKey": "snow_tile_slope", "rot": 9.42477796076938, "tileType": 1, "tint": null}, "17,11": {"modelKey": "snow_tile_tree_double", "rot": 1.5707963267948966, "tileType": 4, "tint": null}, "17,12": {"modelKey": "snow_tile_rock", "rot": 1.5707963267948966, "tileType": 5, "tint": null}, "17,13": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "17,14": {"modelKey": "snow_tile_tree_double", "rot": 3.141592653589793, "tileType": 4, "tint": null}, "17,15": {"modelKey": "snow_tile_slope", "rot": 9.42477796076938, "tileType": 1, "tint": null}, "17,16": {"modelKey": "snow_tile_slope", "rot": 9.42477796076938, "tileType": 1, "tint": null}, "9,11": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "9,12": {"modelKey": "snow_tile_slope", "rot": 4.71238898038469, "tileType": 1, "tint": null}, "9,13": {"modelKey": "snow_tile_slope", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "5,9": {"modelKey": "tile_corner_round", "rot": -9.42477796076938, "tileType": 1, "tint": null}, "5,10": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "6,9": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "6,11": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "5,12": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,12": {"modelKey": "tile_straight", "rot": 14.137166941154069, "tileType": 1, "tint": null}, "5,11": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "5,13": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "6,17": {"modelKey": "tile_corner_round", "rot": 10.995574287564276, "tileType": 1, "tint": null}, "6,16": {"modelKey": "tile_corner_round", "rot": 7.853981633974483, "tileType": 1, "tint": null}, "7,17": {"modelKey": "tile_straight", "rot": 15.707963267948966, "tileType": 1, "tint": null}, "5,18": {"modelKey": "tile_tree", "rot": 0, "tileType": 4, "tint": null}, "6,18": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "7,18": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "8,17": {"modelKey": "tile_straight", "rot": 15.707963267948966, "tileType": 1, "tint": null}, "8,18": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "6,1": {"modelKey": "tile_river_corner", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "7,1": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "8,1": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "1,3": {"modelKey": "tile_crystal", "rot": 0, "tileType": 5, "tint": null}, "1,4": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "14,4": {"modelKey": "tile_rock", "rot": 1.5707963267948966, "tileType": 5, "tint": null}, "15,4": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "15,3": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "14,3": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "16,3": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "16,2": {"modelKey": "tile_tree", "rot": 0, "tileType": 4, "tint": null}, "15,2": {"modelKey": "tile_spawn_round", "rot": 3.141592653589793, "tileType": 6, "tint": null}, "14,2": {"modelKey": "tile_straight", "rot": 0, "tileType": 1, "tint": null}, "13,3": {"modelKey": "tile_tree_double", "rot": 3.141592653589793, "tileType": 4, "tint": null}, "12,3": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "13,2": {"modelKey": "tile_straight", "rot": 0, "tileType": 1, "tint": null}, "13,1": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "15,1": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "14,1": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "13,4": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "12,4": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "11,3": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "12,2": {"modelKey": "tile_straight", "rot": 0, "tileType": 1, "tint": null}, "11,2": {"modelKey": "tile_straight", "rot": 0, "tileType": 1, "tint": null}, "16,4": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "17,2": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "17,3": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "16,1": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "15,0": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "14,0": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "13,0": {"modelKey": "tile_tree_quad", "rot": 0, "tileType": 4, "tint": null}, "12,0": {"modelKey": "wood_structure_high", "rot": 0, "tileType": 0, "tint": null}, "11,0": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "12,1": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "17,5": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "17,1": {"modelKey": "tile_crystal", "rot": 0, "tileType": 5, "tint": null}, "17,0": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "8,19": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "7,19": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "6,19": {"modelKey": "tile_rock", "rot": 1.5707963267948966, "tileType": 5, "tint": null}, "5,19": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,18": {"modelKey": "wood_structure_high", "rot": 0, "tileType": 0, "tint": null}, "2,16": {"modelKey": "tile_tree", "rot": 0, "tileType": 4, "tint": null}, "9,19": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "9,17": {"modelKey": "tile_straight_slope", "rot": 15.707963267948966, "tileType": 1, "tint": null}, "9,18": {"modelKey": "tile_tree_double", "rot": 0, "tileType": 4, "tint": null}, "10,19": {"modelKey": "tile_tree_quad", "rot": 0, "tileType": 4, "tint": null}, "7,16": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "6,15": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "6,14": {"modelKey": "tile_tree_quad", "rot": 0, "tileType": 4, "tint": null}, "1,14": {"modelKey": "tile_tree", "rot": 0, "tileType": 4, "tint": null}, "5,1": {"modelKey": "tile_river_corner", "rot": 4.71238898038469, "tileType": 2, "tint": null}, "4,1": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "8,0": {"modelKey": "wood_structure_high_part", "rot": 0, "tileType": 0, "tint": null}, "7,0": {"modelKey": "tile_tree_double", "rot": 1.5707963267948966, "tileType": 4, "tint": null}, "6,0": {"modelKey": "tile_rock", "rot": 0, "tileType": 5, "tint": null}, "9,1": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "5,0": {"modelKey": "tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "4,0": {"modelKey": "tile_tree_quad", "rot": 0, "tileType": 4, "tint": null}, "3,0": {"modelKey": "tile_slope", "rot": 12.566370614359172, "tileType": 1, "tint": null}, "10,2": {"modelKey": "tile_straight_slope", "rot": 12.566370614359172, "tileType": 1, "tint": null}, "9,2": {"modelKey": "tile_straight_slope", "rot": 9.42477796076938, "tileType": 1, "tint": null}, "8,2": {"modelKey": "tile_straight", "rot": 0, "tileType": 1, "tint": null}, "10,17": {"modelKey": "snow_tile_straight", "rot": 0, "tileType": 1, "tint": null}, "11,17": {"modelKey": "snow_tile_straight", "rot": 0, "tileType": 1, "tint": null}, "12,17": {"modelKey": "snow_tile_river_bridge", "rot": 1.5707963267948966, "tileType": 3, "tint": null}, "14,18": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "15,18": {"modelKey": "snow_tile_tree_double", "rot": 3.141592653589793, "tileType": 4, "tint": null}, "13,18": {"modelKey": "snow_tile_rock", "rot": 1.5707963267948966, "tileType": 5, "tint": null}, "12,18": {"modelKey": "snow_tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "18,10": {"modelKey": "snow_tile_slope", "rot": 12.566370614359172, "tileType": 1, "tint": null}, "18,9": {"modelKey": "snow_tile_slope", "rot": 12.566370614359172, "tileType": 1, "tint": null}, "18,15": {"modelKey": "snow_tile_slope", "rot": 12.566370614359172, "tileType": 1, "tint": null}, "18,16": {"modelKey": "snow_tile_slope", "rot": 12.566370614359172, "tileType": 1, "tint": null}, "18,12": {"modelKey": "snow_tile_slope", "rot": 12.566370614359172, "tileType": 1, "tint": null}, "0,11": {"modelKey": "tile_slope", "rot": 3.141592653589793, "tileType": 1, "tint": null}, "0,7": {"modelKey": "tile_slope", "rot": 3.141592653589793, "tileType": 1, "tint": null}, "0,9": {"modelKey": "tile_slope", "rot": 9.42477796076938, "tileType": 1, "tint": null}, "0,10": {"modelKey": "tile_slope", "rot": 9.42477796076938, "tileType": 1, "tint": null}, "2,0": {"modelKey": "tower_square_build_b", "rot": 0, "tileType": 0, "tint": null}, "17,4": {"modelKey": "tile_tree_quad", "rot": 0, "tileType": 4, "tint": null}, "0,8": {"modelKey": "tile_river_straight", "rot": 3.141592653589793, "tileType": 2, "tint": null}, "1,6": {"modelKey": "wood_structure", "rot": 0, "tileType": 0, "tint": null}, "1,5": {"modelKey": "wood_structure_part", "rot": 3.141592653589793, "tileType": 0, "tint": null}, "6,10": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "6,12": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "6,13": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "7,14": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "7,15": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "8,16": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "9,3": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "9,4": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "9,5": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "9,6": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "9,7": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "8,8": {"modelKey": "wood_structure_part", "rot": 7.853981633974483, "tileType": 0, "tint": null}, "7,9": {"modelKey": "wood_structure_high", "rot": 0, "tileType": 0, "tint": null}, "3,1": {"modelKey": "wood_structure_high", "rot": 0, "tileType": 0, "tint": null}, "16,0": {"modelKey": "wood_structure_part", "rot": 0, "tileType": 0, "tint": null}, "12,5": {"modelKey": "wood_structure_part", "rot": 1.5707963267948966, "tileType": 0, "tint": null}, "13,5": {"modelKey": "wood_structure_part", "rot": 1.5707963267948966, "tileType": 0, "tint": null}, "14,5": {"modelKey": "wood_structure_part", "rot": 1.5707963267948966, "tileType": 0, "tint": null}, "15,5": {"modelKey": "wood_structure_part", "rot": 1.5707963267948966, "tileType": 0, "tint": null}, "10,1": {"modelKey": "wood_structure_high_part", "rot": 0, "tileType": 0, "tint": null}, "1,13": {"modelKey": "tile_slope", "rot": 4.71238898038469, "tileType": 1, "tint": null}, "0,12": {"modelKey": "tile_slope", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "2,15": {"modelKey": "tile_slope", "rot": 0, "tileType": 1, "tint": null}, "1,15": {"modelKey": "tile_slope", "rot": 3.141592653589793, "tileType": 1, "tint": null}, "1,16": {"modelKey": "tile_slope", "rot": 6.283185307179586, "tileType": 1, "tint": null}, "2,17": {"modelKey": "tile_slope", "rot": 6.283185307179586, "tileType": 1, "tint": null}, "3,18": {"modelKey": "tile_slope", "rot": 6.283185307179586, "tileType": 1, "tint": null}, "9,14": {"modelKey": "snow_tile_slope", "rot": 3.141592653589793, "tileType": 1, "tint": null}, "10,15": {"modelKey": "snow_wood_structure", "rot": 0, "tileType": 0, "tint": null}, "9,15": {"modelKey": "snow_tile_tree_double", "rot": 3.141592653589793, "tileType": 4, "tint": null}, "11,8": {"modelKey": "snow_tile_tree_double", "rot": 3.141592653589793, "tileType": 4, "tint": null}, "0,0": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "10,5": {"modelKey": "tile_tree", "rot": 0, "tileType": 4, "tint": null}, "8,14": {"modelKey": "wood_structure_part", "rot": 3.141592653589793, "tileType": 0, "tint": null}, "8,13": {"modelKey": "wood_structure_part", "rot": 3.141592653589793, "tileType": 0, "tint": null}, "8,12": {"modelKey": "wood_structure_part", "rot": 3.141592653589793, "tileType": 0, "tint": null}};
-const DEFAULT_FREE_OBJS = [{"modelKey": "tile_end_round", "tint": null, "pos": {"x": 9.4, "y": 4, "z": 11.4}, "rot": {"x": -0.05235987755982988, "y": 3.9269908169872414, "z": 0.05235987755982988}, "scale": 3}, {"modelKey": "tile_end_round", "tint": null, "pos": {"x": 9.4, "y": 4, "z": 11.4}, "rot": {"x": -0.05235987755982988, "y": 3.9269908169872414, "z": 0.05235987755982988}, "scale": 3}, {"modelKey": "tile_end_round", "tint": null, "pos": {"x": 10, "y": 0, "z": 13.3}, "rot": {"x": -0.05235987755982988, "y": 3.0892327760299634, "z": 0}, "scale": 1.95}, {"modelKey": "snow_wood_structure_high", "tint": null, "pos": {"x": 3, "y": 0.1, "z": 11.9}, "rot": {"x": -0.05235987755982988, "y": 3.0892327760299634, "z": 0}, "scale": 0.35}, {"modelKey": "tower_square_build_d", "tint": null, "pos": {"x": 0.1, "y": 0.3, "z": 2}, "rot": {"x": 0, "y": 2.705260340591211, "z": 0}, "scale": 2}, {"modelKey": "tower_square_build_a", "tint": null, "pos": {"x": 2.4, "y": 0, "z": 1.8}, "rot": {"x": 0, "y": 3.6477381366681487, "z": 0}, "scale": 3}, {"modelKey": "tower_round_build_a", "tint": null, "pos": {"x": 17.2, "y": 0, "z": 16.8}, "rot": {"x": 0, "y": 3.9269908169872414, "z": 0}, "scale": 3}, {"modelKey": "tower_round_build_d", "tint": null, "pos": {"x": 16.2, "y": 0, "z": 18}, "rot": {"x": 0, "y": 4.921828490624009, "z": 0}, "scale": 3}, {"modelKey": "tower_round_middle_c", "tint": null, "pos": {"x": 15.1, "y": 0, "z": 17.6}, "rot": {"x": 0, "y": 4.921828490624009, "z": 0}, "scale": 1.25}, {"modelKey": "snow_tile", "tint": null, "pos": {"x": 6.3, "y": 0, "z": 17.6}, "rot": {"x": 0, "y": 4.921828490624009, "z": 0}, "scale": 0.65}, {"modelKey": "snow_tile", "tint": null, "pos": {"x": 6.3, "y": 0, "z": 12.1}, "rot": {"x": 0, "y": 1.8675022996339325, "z": 0}, "scale": 0.65}, {"modelKey": "snow_tile", "tint": null, "pos": {"x": 19, "y": 0, "z": 12.9}, "rot": {"x": 0, "y": 1.8675022996339325, "z": 0}, "scale": 1.6}, {"modelKey": "tile", "tint": null, "pos": {"x": 4.5, "y": -0.1, "z": 9.8}, "rot": {"x": 0, "y": 1.8675022996339325, "z": 0}, "scale": 1.6}, {"modelKey": "tile_tree", "tint": null, "pos": {"x": 2.8, "y": 0.2, "z": 16.4}, "rot": {"x": 0, "y": 1.8675022996339325, "z": 0}, "scale": 0.4}, {"modelKey": "tile_tree", "tint": null, "pos": {"x": 18.6, "y": 0.1, "z": 7.5}, "rot": {"x": 0, "y": 1.2566370614359172, "z": 0}, "scale": 0.4}, {"modelKey": "snow_wood_structure", "tint": null, "pos": {"x": 12.5, "y": 0.1, "z": 16.4}, "rot": {"x": 0, "y": 1.2566370614359172, "z": 0}, "scale": 0.4}, {"modelKey": "snow_wood_structure", "tint": null, "pos": {"x": 11.4, "y": 0.1, "z": 15.6}, "rot": {"x": 0, "y": 2.199114857512855, "z": 0}, "scale": 0.2}, {"modelKey": "snow_tile_tree", "tint": null, "pos": {"x": 18, "y": -0.6, "z": 15.5}, "rot": {"x": 0, "y": 2.199114857512855, "z": 0}, "scale": 3}, {"modelKey": "tile_tree", "tint": null, "pos": {"x": 3.8, "y": -0.1, "z": -0.1}, "rot": {"x": 0, "y": 2.199114857512855, "z": 0}, "scale": 3}, {"modelKey": "tile_tree_quad", "tint": null, "pos": {"x": -0.3, "y": -0.2, "z": 10.4}, "rot": {"x": 0, "y": 2.199114857512855, "z": 0}, "scale": 3}];
+const DEFAULT_MAP = (() => {
+  const G=TILE_GRASS,R=TILE_ROAD,T=TILE_TREE,K=TILE_ROCK,S=TILE_START,E=TILE_END;
+  // 20x20 grid, hand-crafted like Kenney reference
+  // Path snakes: START top-left → right → down → left → down → right → down → left → END
+  const g = Array.from({length:GRID_H},()=>Array(GRID_W).fill(G));
 
+  // === PATH ===
+  // Row 1: col 1→16 (E)
+  for(let c=1;c<=16;c++) g[1][c]=R;
+  // Col 16: row 1→5 (S)
+  for(let r=2;r<=5;r++) g[r][16]=R;
+  // Row 5: col 4→16 (W)
+  for(let c=4;c<=15;c++) g[5][c]=R;
+  // Col 4: row 5→9 (S)
+  for(let r=6;r<=9;r++) g[r][4]=R;
+  // Row 9: col 4→16 (E)
+  for(let c=5;c<=16;c++) g[9][c]=R;
+  // Col 16: row 9→13 (S)
+  for(let r=10;r<=13;r++) g[r][16]=R;
+  // Row 13: col 2→16 (W)
+  for(let c=2;c<=15;c++) g[13][c]=R;
+  // Col 2: row 13→17 (S)
+  for(let r=14;r<=17;r++) g[r][2]=R;
+  // Row 17: col 2→18 (E)
+  for(let c=3;c<=18;c++) g[17][c]=R;
+
+  g[1][1]=S; g[17][18]=E;
+
+  // === BIOMES ===
+  // Top-right: dense forest
+  const forest1=[[0,10],[0,11],[0,12],[0,13],[0,14],[0,15],[0,16],[0,17],[0,18],[0,19],
+    [1,17],[1,18],[1,19],[2,17],[2,18],[2,19],[3,17],[3,18],[3,19]];
+  forest1.forEach(([r,c])=>{if(g[r][c]===G)g[r][c]=T;});
+
+  // Between lanes 1&2: trees + rocks
+  [[2,5],[2,6],[2,7],[2,8],[2,9],[2,10],[2,11],[2,12],[2,13],[2,14],
+   [3,5],[3,6],[3,7],[3,8],[3,9],[3,11],[3,12],[3,13],[3,14],
+   [4,5],[4,6],[4,7],[4,9],[4,10],[4,12],[4,14]
+  ].forEach(([r,c])=>{if(g[r][c]===G)g[r][c]=T;});
+  [[3,10],[4,8],[4,11],[4,13]].forEach(([r,c])=>{if(g[r][c]===G)g[r][c]=K;});
+
+  // Between lanes 2&3: mixed
+  [[6,5],[6,6],[6,7],[6,8],[6,9],[6,10],[6,11],[6,12],[6,13],[6,14],[6,15],
+   [7,5],[7,6],[7,7],[7,8],[7,9],[7,11],[7,12],[7,13],[7,15],
+   [8,5],[8,6],[8,8],[8,9],[8,11],[8,12],[8,14],[8,15]
+  ].forEach(([r,c])=>{if(g[r][c]===G)g[r][c]=T;});
+  [[7,10],[7,14],[8,7],[8,10],[8,13]].forEach(([r,c])=>{if(g[r][c]===G)g[r][c]=K;});
+
+  // Left side tall forest
+  [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0],[9,0],[10,0],[11,0],
+   [2,1],[2,2],[3,1],[3,2],[3,3],[4,1],[4,2],[4,3],
+   [6,1],[6,2],[6,3],[7,1],[7,2],[7,3],[8,1],[8,2],[8,3]
+  ].forEach(([r,c])=>{if(g[r][c]===G)g[r][c]=T;});
+
+  // Between lanes 3&4
+  [[10,5],[10,6],[10,7],[10,8],[10,9],[10,10],[10,11],[10,12],[10,13],[10,14],[10,15],
+   [11,5],[11,6],[11,7],[11,9],[11,10],[11,11],[11,12],[11,13],[11,15],
+   [12,5],[12,6],[12,8],[12,9],[12,11],[12,12],[12,14],[12,15]
+  ].forEach(([r,c])=>{if(g[r][c]===G)g[r][c]=T;});
+  [[11,8],[11,14],[12,7],[12,10],[12,13]].forEach(([r,c])=>{if(g[r][c]===G)g[r][c]=K;});
+
+  // Bottom area
+  [[14,3],[14,4],[14,5],[14,6],[14,7],[14,8],[15,3],[15,4],[15,5],[15,7],[15,8],
+   [16,3],[16,4],[16,5],[16,7],[16,8],[16,9],[16,10],[16,11],
+   [18,0],[18,1],[18,2],[18,3],[18,4],[18,5],[18,6],[18,7],[18,8],
+   [19,0],[19,1],[19,2],[19,3],[19,4],[19,5],[19,6],[19,7],[19,8],[19,9],[19,10]
+  ].forEach(([r,c])=>{if(g[r][c]===G)g[r][c]=T;});
+  [[15,6],[16,6]].forEach(([r,c])=>{if(g[r][c]===G)g[r][c]=K;});
+
+  // Right-side bottom forest
+  [[14,17],[14,18],[14,19],[15,16],[15,17],[15,18],[15,19],
+   [16,16],[16,17],[16,18],[16,19],[18,15],[18,16],[18,17],[18,18],[18,19],
+   [19,14],[19,15],[19,16],[19,17],[19,18],[19,19]
+  ].forEach(([r,c])=>{if(g[r][c]===G)g[r][c]=T;});
+
+  return g;
+})();
 
 // Pre-computed path from start to end using BFS
 function computePath(grid) {
@@ -916,7 +1093,6 @@ const TOTAL_WAVES = 20;
 let THREE_loaded = false;
 let assets = null;
 let renderer, scene, camera, raycaster;
-let _reflGroup = null;  // Клон карты — отражение
 let gameState = 'menu';
 let animFrameId = null;
 
@@ -958,53 +1134,71 @@ let enemyId = 0;
 function initThree() {
   const canvas = document.getElementById('canvas');
   
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, stencil: true });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputEncoding = THREE.sRGBEncoding;
-  renderer.toneMapping = THREE.LinearToneMapping;
-  renderer.toneMappingExposure = 1.0;
-  renderer.setClearColor(0x6baed6, 1); // fallback пока небо не загружено
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.64;
+  renderer.setClearColor(0x000000, 0);
   
   scene = new THREE.Scene();
-  // Небо загружается ниже через TextureLoader
-  scene.background = new THREE.Color(0x87ceeb); // временный голубой
 
-  // ══ НЕБО ══════════════════════════════════
-  // Equirectangular панорама. Облака в верхней четверти текстуры.
-  // Используем SphereGeometry как скайдом — даёт полный контроль над позицией.
-  // Это надёжнее чем texture.offset для scene.background.
-  const _skyLoader = new THREE.TextureLoader();
-  _skyLoader.load('assets/sky/sky_05_2k.png', (skyTex) => {
-    skyTex.mapping = THREE.EquirectangularReflectionMapping;
-    skyTex.wrapS = THREE.RepeatWrapping;
-    skyTex.wrapT = THREE.RepeatWrapping;
-    // offset.y = +0.30 → UV сдвигается вверх → мы видим нижнюю часть текстуры
-    // НО нам нужны облака (верх текстуры) → offset.y отрицательный
-    // -0.38 = сильно опускаем горизонт, облака заполняют верхние 2/3 экрана
-    skyTex.offset.set(0, -0.65);
-    scene.background = skyTex;
-    window._skyTex = skyTex;
-    renderer.setClearColor(0x87ceeb, 1);
+  // === CHECKERED FLOOR — полностью процедурный, без текстуры ===
+  // Цвета точные, repeat работает через шейдер напрямую
+  // cell size = 2 world units, plane 400x400 → ~200 cells visible
+  const _flMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uCol1: { value: new THREE.Color('#3d3d3f') },
+      uCol2: { value: new THREE.Color('#39393b') },
+      uCellSize: { value: 2.0 }, // размер одной клетки в мировых единицах
+    },
+    vertexShader: `
+      varying vec3 vWorldPos;
+      void main() {
+        vec4 worldPos = modelMatrix * vec4(position, 1.0);
+        vWorldPos = worldPos.xyz;
+        gl_Position = projectionMatrix * viewMatrix * worldPos;
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 uCol1;
+      uniform vec3 uCol2;
+      uniform float uCellSize;
+      varying vec3 vWorldPos;
+      void main() {
+        // Шахматный узор по мировым координатам — не зависит от UV
+        float cx = floor(vWorldPos.x / uCellSize);
+        float cz = floor(vWorldPos.z / uCellSize);
+        float checker = mod(cx + cz, 2.0);
+        vec3 col = mix(uCol2, uCol1, checker);
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `,
   });
-  // ═══════════════════════════════════════════
+  const _fl = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), _flMat);
+  _fl.rotation.x = -Math.PI / 2;
+  _fl.position.set((GRID_W-1)/2*TILE_SIZE, -0.002, (GRID_H-1)/2*TILE_SIZE);
+  scene.add(_fl);
 
+  // Shadow receiver
+  const _shadowMat = new THREE.ShadowMaterial({ opacity: 0.5 });
+  const _shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), _shadowMat);
+  _shadowPlane.rotation.x = -Math.PI / 2;
+  _shadowPlane.position.set((GRID_W-1)/2*TILE_SIZE, -0.001, (GRID_H-1)/2*TILE_SIZE);
+  _shadowPlane.receiveShadow = true;
+  scene.add(_shadowPlane);
 
   // Camera
   camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
   updateCamera();
-
-
   
   raycaster = new THREE.Raycaster();
-
-
   
   // Lighting — dark Kenney style: не пересвечивать
   const ambLight = new THREE.AmbientLight(0xfff0e0, 0.47);
-  ambLight.userData.persistent = true;
   scene.add(ambLight);
 
   const dirLight = new THREE.DirectionalLight(0xffeedd, 1.1);
@@ -1021,45 +1215,19 @@ function initThree() {
   dirLight.shadow.camera.bottom = -30;
   dirLight.shadow.bias = -0.0005;
   dirLight.shadow.normalBias = 0.02;
-  dirLight.userData.persistent = true;
   scene.add(dirLight);
 
   const fillLight = new THREE.DirectionalLight(0x8899cc, 0.35);
   fillLight.position.set(10, 4, -8);
-  fillLight.userData.persistent = true;
   scene.add(fillLight);
 
   const hemiLight = new THREE.HemisphereLight(0xddeeff, 0x887755, 0.3);
-  hemiLight.userData.persistent = true;
   scene.add(hemiLight);
-
-  // ── ОКЕАН: плоскость над отражением ──────────────────────────
-  new THREE.TextureLoader().load('assets/ocean/ocean.png', (oceanTex) => {
-    oceanTex.wrapS = oceanTex.wrapT = THREE.RepeatWrapping;
-    oceanTex.repeat.set(4, 4);
-    const oceanMat = new THREE.MeshBasicMaterial({
-      map: oceanTex,
-      transparent: true,
-      opacity: 0.55,
-      depthWrite: false,
-    });
-    const oceanMesh = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), oceanMat);
-    oceanMesh.rotation.x = -Math.PI / 2;
-    oceanMesh.position.set(
-      (GRID_W - 1) / 2 * TILE_SIZE,
-      -0.012, // совпадает с MIRROR_Y
-      (GRID_H - 1) / 2 * TILE_SIZE
-    );
-    oceanMesh.renderOrder = 10;
-    oceanMesh.userData.persistent = true;
-    scene.add(oceanMesh);
-    window._oceanMesh = oceanMesh;
-    window._oceanT = 0;
-  });
-  // ─────────────────────────────────────────────────────────────
-
+  
   window.addEventListener('resize', onResize);
 
+  // Save all persistent objects (lights + floor) so clearScene can restore them
+  _persistentObjects = [...scene.children];
 }
 
 function updateCamera() {
@@ -1075,7 +1243,6 @@ function onResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-
 }
 
 // ============================================================
@@ -1131,6 +1298,7 @@ const ROCK_POOL=['tile_rock','tile_crystal','tile_rock'];
 // ALL non-persistent scene objects tracked here
 // Lights and floor are added once in initThree and NEVER removed
 let _sceneObjects = [];
+let _persistentObjects = []; // filled at end of initThree
 
 function addToScene(obj) {
   scene.add(obj);
@@ -1138,13 +1306,9 @@ function addToScene(obj) {
 }
 
 function clearScene() {
-  // Удаляем всё кроме объектов с userData.persistent = true
-  const toRemove = scene.children.filter(o => !o.userData.persistent);
-  toRemove.forEach(o => scene.remove(o));
-  // Отражение и оверлей
-  _reflGroup = null;
-  window._blueOverlay = null;
-  // НЕ трогаем scene.background — вызывающий код сам выставляет нужный фон
+  // Nuclear: wipe entire scene then restore only lights+floor
+  while (scene.children.length > 0) scene.remove(scene.children[0]);
+  _persistentObjects.forEach(o => scene.add(o));
   _sceneObjects = [];
   tileObjects = [];
   tileMeshGrid = Array.from({length:GRID_H},()=>Array(GRID_W).fill(null));
@@ -1155,9 +1319,6 @@ function clearScene() {
 
 function buildMap(g, customCellData) {
   clearScene();
-  // Восстанавливаем небо (игровой режим)
-  if (window._skyTex) scene.background = window._skyTex;
-  else scene.background = new THREE.Color(0x87ceeb);
 
   // If customCellData provided (editor map): only render explicitly placed tiles
   // Otherwise render full DEFAULT_MAP with all grass/tree/rock tiles
@@ -1405,10 +1566,7 @@ function buildEditorPalette() {
     }
     const btn = document.createElement('div');
     btn.className='ed-tile-btn';
-    const thumb = getThumb(item.modelKey);
-    btn.innerHTML = thumb
-      ? `<div class="ed-tile-icon"><img src="${thumb}" style="width:32px;height:32px;object-fit:contain;"></div><div class="ed-tile-label">${item.label}</div>`
-      : `<div class="ed-tile-icon"><img src="assets/icons/ic_map.png" style="width:22px;height:22px;filter:none;opacity:.7;"></div><div class="ed-tile-label">${item.label}</div>`;
+    btn.innerHTML=`<div class="ed-tile-icon"><img src="assets/icons/ic_map.png" style="width:22px;height:22px;object-fit:contain;filter:brightness(0) opacity(.5);"></div><div class="ed-tile-label">${item.label}</div>`;
     btn.addEventListener('click',()=>{
       edSelectedTile={...item,rot:0};
       edSelectedCell=null;
@@ -1427,50 +1585,18 @@ function buildEditorPalette() {
 function openEditor() {
   editorActive = true;
   edCellData = {};
+  // Start with a BLANK grid — only one grass tile in the center as reference
   editorGrid = Array.from({length:GRID_H}, ()=>Array(GRID_W).fill(TILE_GRASS));
   document.getElementById('editor-screen').style.display='flex';
   document.getElementById('main-menu').classList.add('hidden');
   buildEditorPalette();
   if(!scene) { initThree(); }
-
-  // Прячем отражение
-  if (_reflGroup) _reflGroup.visible = false;
-  if (window._blueOverlay) window._blueOverlay.visible = false;
-
-  // Шахматный пол (создаём один раз)
-  if (!window._editorFloor) {
-    const cv = document.createElement('canvas');
-    cv.width = cv.height = 128;
-    const cx = cv.getContext('2d');
-    const c1 = '#4a4a4c', c2 = '#3a3a3c';
-    for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
-      cx.fillStyle = (x + y) % 2 === 0 ? c1 : c2;
-      cx.fillRect(x*16, y*16, 16, 16);
-    }
-    const tex = new THREE.CanvasTexture(cv);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(40, 40);
-    const mat = new THREE.MeshBasicMaterial({ map: tex });
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), mat);
-    mesh.rotation.x = -Math.PI / 2;
-    mesh.position.set((GRID_W-1)/2*TILE_SIZE, -0.01, (GRID_H-1)/2*TILE_SIZE);
-    mesh.userData.persistent = true;
-    scene.add(mesh);
-    window._editorFloor = mesh;
-  }
-
   buildEditorEmptyMap();
   gameState = 'editor';
 }
 
 function buildEditorEmptyMap() {
   clearScene();
-  // Серый фон для редактора (после clearScene который его не трогает)
-  scene.background = new THREE.Color(0x39393b);
-  renderer.setClearColor(0x39393b, 1);
-  // Показываем шахматный пол, прячем игровые объекты
-  if (window._editorFloor) window._editorFloor.visible = true;
-  if (window._oceanMesh)   window._oceanMesh.visible   = false;
 
   // Grid lines so user can see the cells
   const lineMat=new THREE.LineBasicMaterial({color:0x555555,transparent:true,opacity:0.8});
@@ -1502,19 +1628,6 @@ function closeEditor() {
   editorActive = false;
   gameState = 'menu';
   if(edHoverMesh) { edHoverMesh.visible=false; }
-
-  // ── Восстанавливаем небо/океан при выходе из редактора ──
-  if (window._skyTex) {
-    scene.background = window._skyTex;
-  } else {
-    scene.background = new THREE.Color(0x87ceeb);
-  }
-  renderer.setClearColor(0x87ceeb, 1);
-  if (window._oceanMesh)   window._oceanMesh.visible   = true;
-  if (window._blueOverlay) window._blueOverlay.visible  = true;
-  if (_reflGroup)          _reflGroup.visible           = true;
-  if (window._editorFloor) window._editorFloor.visible  = false;
-
   document.getElementById('editor-screen').style.display='none';
   document.getElementById('main-menu').classList.remove('hidden');
 }
@@ -1991,12 +2104,6 @@ function setupEditorEvents() {
     const mapCopy = editorGrid.map(r=>[...r]);
     document.getElementById('editor-screen').style.display='none';
     editorActive=false;
-    // Восстанавливаем небо/океан при старте игры из редактора
-    if (window._skyTex) scene.background = window._skyTex;
-    else scene.background = new THREE.Color(0x87ceeb);
-    renderer.setClearColor(0x87ceeb, 1);
-    if (window._oceanMesh)   window._oceanMesh.visible  = true;
-    if (window._editorFloor) window._editorFloor.visible = false;
     startGame(mapCopy, edCellData);
   });
 }
@@ -2251,127 +2358,6 @@ function spawnDeathParticles(pos) {
   }
 }
 
-
-// ── ОТРАЖЕНИЕ ──────────────────────────────────────────────────
-
-// ── ОТРАЖЕНИЕ: перевёрнутая копия тайлов карты ─────────────────
-// ── ОТРАЖЕНИЕ: stencil-маска = точно по силуэту клонов ─────────────────────
-const _MIRROR_Y = -0.01;
-const _REFL_GAP  =  0.003;
-
-function buildReflection() {
-  if (_reflGroup) { scene.remove(_reflGroup); _reflGroup = null; }
-  if (window._blueOverlay) { scene.remove(window._blueOverlay); window._blueOverlay = null; }
-
-  const grp = new THREE.Group();
-
-  tileObjects.forEach(obj => {
-    const clone = obj.clone();
-    clone.traverse(child => {
-      if (!child.isMesh || !child.material) return;
-      const mats = Array.isArray(child.material) ? child.material : [child.material];
-      child.material = mats.map(m => {
-        const nm = m.clone();
-        nm.transparent = false;
-        nm.opacity = 1.0;
-        nm.depthWrite = true;
-        nm.side = THREE.BackSide;
-        // ── STENCIL: каждый пиксель отражения пишет 1 в stencil-буфер ──
-        nm.stencilWrite = true;
-        nm.stencilFunc  = THREE.AlwaysStencilFunc;
-        nm.stencilZPass = THREE.ReplaceStencilOp;
-        nm.stencilRef   = 1;
-        return nm;
-      });
-      if (child.material.length === 1) child.material = child.material[0];
-      child.receiveShadow = false;
-      child.castShadow    = false;
-    });
-    grp.add(clone);
-  });
-
-  grp.scale.set(1, -1, 1);
-  grp.position.y = 2 * _MIRROR_Y - _REFL_GAP;
-  grp.renderOrder = 1;
-  _reflGroup = grp;
-  scene.add(grp);
-
-  // ── Синий оверлей с размытыми краями через canvas-градиент ──
-  {
-    // Текстура: полная непрозрачность до 80% от центра, затем плавное размытие к краям
-    // Используем квадратный canvas с линейными градиентами по всем 4 сторонам
-    const SZ = 512;
-    const cv = document.createElement('canvas');
-    cv.width = cv.height = SZ;
-    const cx = cv.getContext('2d');
-
-    // Сначала заливаем белым
-    cx.fillStyle = 'rgba(255,255,255,1)';
-    cx.fillRect(0, 0, SZ, SZ);
-
-    // Fade зона = 20% от края (100% - 80% = 20%)
-    const FADE = SZ * 0.20;
-
-    // Накладываем 4 линейных градиента по краям через destination-out
-    cx.globalCompositeOperation = 'destination-out';
-
-    // Левый край
-    const gl = cx.createLinearGradient(0, 0, FADE, 0);
-    gl.addColorStop(0, 'rgba(0,0,0,1)');
-    gl.addColorStop(1, 'rgba(0,0,0,0)');
-    cx.fillStyle = gl; cx.fillRect(0, 0, FADE, SZ);
-
-    // Правый край
-    const gr = cx.createLinearGradient(SZ, 0, SZ - FADE, 0);
-    gr.addColorStop(0, 'rgba(0,0,0,1)');
-    gr.addColorStop(1, 'rgba(0,0,0,0)');
-    cx.fillStyle = gr; cx.fillRect(SZ - FADE, 0, FADE, SZ);
-
-    // Верхний край
-    const gt = cx.createLinearGradient(0, 0, 0, FADE);
-    gt.addColorStop(0, 'rgba(0,0,0,1)');
-    gt.addColorStop(1, 'rgba(0,0,0,0)');
-    cx.fillStyle = gt; cx.fillRect(0, 0, SZ, FADE);
-
-    // Нижний край
-    const gb = cx.createLinearGradient(0, SZ, 0, SZ - FADE);
-    gb.addColorStop(0, 'rgba(0,0,0,1)');
-    gb.addColorStop(1, 'rgba(0,0,0,0)');
-    cx.fillStyle = gb; cx.fillRect(0, SZ - FADE, SZ, FADE);
-
-    cx.globalCompositeOperation = 'source-over';
-
-    const fadeTex = new THREE.CanvasTexture(cv);
-
-    const geo = new THREE.PlaneGeometry(200, 200);
-    geo.rotateX(-Math.PI / 2);
-    const mat = new THREE.MeshBasicMaterial({
-      color: 0x4ab8e8,
-      alphaMap: fadeTex,
-      transparent: true,
-      opacity: 0.30,
-      depthWrite: false,
-      stencilWrite: false,
-      stencilFunc:  THREE.EqualStencilFunc,
-      stencilRef:   1,
-      stencilFail:  THREE.KeepStencilOp,
-      stencilZFail: THREE.KeepStencilOp,
-      stencilZPass: THREE.KeepStencilOp,
-    });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(
-      (GRID_W - 1) / 2 * TILE_SIZE,
-      _MIRROR_Y - _REFL_GAP / 2 + 0.005,
-      (GRID_H - 1) / 2 * TILE_SIZE
-    );
-    mesh.renderOrder = 2;
-    scene.add(mesh);
-    window._blueOverlay = mesh;
-  }
-}
-// ─────────────────────────────────────────────────────────────────────────
-
-
 // ============================================================
 // GAME LOOP
 // ============================================================
@@ -2383,17 +2369,7 @@ function gameLoop(ts) {
   
   const dt = Math.min((ts - lastTime) / 1000, 0.1) * gameSpeed;
   lastTime = ts;
-
-  // Анимация океана — медленный сдвиг UV
-  if (window._oceanMesh && window._oceanMesh.material.map) {
-    window._oceanT = (window._oceanT || 0) + 0.0003;
-    window._oceanMesh.material.map.offset.set(
-      Math.sin(window._oceanT * 0.7) * 0.04,
-      window._oceanT * 0.5 % 1
-    );
-  }
-
-
+  
   if (gameState !== 'playing') {
     renderer.render(scene, camera);
     return;
@@ -2635,74 +2611,6 @@ function updateHUD() {
   });
 }
 
-// ============================================================
-// THUMBNAIL RENDERER — рендерит 3D модель в маленький canvas
-// ============================================================
-function renderModelThumb(modelKey, size = 80) {
-  // Offscreen Three.js сцена
-  const tw = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  tw.setSize(size, size);
-  tw.setPixelRatio(2);
-  tw.setClearColor(0x000000, 0);
-  tw.outputEncoding = THREE.sRGBEncoding;
-  tw.toneMapping = THREE.ACESFilmicToneMapping;
-  tw.toneMappingExposure = 0.9;
-
-  const ts = new THREE.Scene();
-
-  // Освещение
-  ts.add(new THREE.AmbientLight(0xffffff, 0.8));
-  const dl = new THREE.DirectionalLight(0xffffff, 1.2);
-  dl.position.set(3, 5, 4);
-  ts.add(dl);
-  const fl = new THREE.DirectionalLight(0xaaccff, 0.4);
-  fl.position.set(-2, 2, -3);
-  ts.add(fl);
-
-  // Модель
-  const obj = assets.clone(modelKey);
-  if (!obj) { tw.dispose(); return null; }
-
-  ts.add(obj);
-
-  // Масштаб
-  const box = new THREE.Box3().setFromObject(obj);
-  const bsz = new THREE.Vector3();
-  box.getSize(bsz);
-  const bc = new THREE.Vector3();
-  box.getCenter(bc);
-  const maxDim = Math.max(bsz.x, bsz.y, bsz.z);
-  if (maxDim > 0.01) {
-    const s = 1.6 / maxDim;
-    obj.scale.set(s, s, s);
-  }
-  // Центрируем
-  box.setFromObject(obj);
-  box.getCenter(bc);
-  obj.position.sub(bc);
-
-  // Камера — изометрический вид
-  const tc = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-  tc.position.set(2.2, 2.0, 2.2);
-  tc.lookAt(0, 0, 0);
-
-  tw.render(ts, tc);
-  const url = tw.domElement.toDataURL('image/png');
-  tw.dispose();
-  ts.remove(obj);
-  return url;
-}
-
-// Кэш миниатюр чтобы не рендерить одно и то же дважды
-const _thumbCache = {};
-
-function getThumb(modelKey) {
-  if (!_thumbCache[modelKey]) {
-    _thumbCache[modelKey] = renderModelThumb(modelKey) || '';
-  }
-  return _thumbCache[modelKey];
-}
-
 function buildBottomPanel() {
   const towersTab = document.getElementById('tab-towers');
   const animalsTab = document.getElementById('tab-animals');
@@ -2716,11 +2624,7 @@ function buildBottomPanel() {
     card.dataset.id = def.id;
     card.dataset.cost = def.cost;
     card.dataset.type = 'tower';
-    const thumb = getThumb(def.modelKey);
-    const imgHtml = thumb
-      ? `<img src="${thumb}" style="width:52px;height:52px;object-fit:contain;">`
-      : `<img src="assets/icons/ic_target.png" style="width:36px;height:36px;">`;
-    card.innerHTML = `<div class="item-icon-wrap" style="width:52px;height:52px;">${imgHtml}</div><div class="item-name">${def.name}</div><div class="item-cost">${def.cost}</div>`;
+    card.innerHTML = `<div class="item-icon-wrap"><img src="assets/icons/ic_target.png" style="width:32px;height:32px;filter:brightness(0) opacity(.6)"></div><div class="item-name">${def.name}</div><div class="item-cost">${def.cost}</div>`;
     card.addEventListener('click', () => selectTowerType(def));
     card.addEventListener('mouseenter', e => showTooltip(e, def.name, def.desc));
     card.addEventListener('mouseleave', hideTooltip);
@@ -2733,11 +2637,7 @@ function buildBottomPanel() {
     card.dataset.id = def.id;
     card.dataset.cost = def.cost;
     card.dataset.type = 'animal';
-    const thumb = getThumb(def.modelKey);
-    const imgHtml = thumb
-      ? `<img src="${thumb}" style="width:52px;height:52px;object-fit:contain;">`
-      : `<img src="assets/icons/ic_like.png" style="width:36px;height:36px;">`;
-    card.innerHTML = `<div class="item-icon-wrap" style="width:52px;height:52px;">${imgHtml}</div><div class="item-name">${def.name}</div><div class="item-cost">${def.cost}</div>`;
+    card.innerHTML = `<div class="item-icon-wrap"><img src="assets/icons/ic_like.png" style="width:32px;height:32px;filter:brightness(0) opacity(.6)"></div><div class="item-name">${def.name}</div><div class="item-cost">${def.cost}</div>`;
     card.addEventListener('click', () => selectTowerType(def));
     card.addEventListener('mouseenter', e => showTooltip(e, def.name, def.desc));
     card.addEventListener('mouseleave', hideTooltip);
@@ -3104,7 +3004,7 @@ function onWheel(e) {
 // ============================================================
 // GAME FLOW
 // ============================================================
-function startGame(mapGrid, customCellData, freeObjsData) {
+function startGame(mapGrid, customCellData) {
   grid = mapGrid.map(r => [...r]);
   path = computePath(grid);
   
@@ -3125,24 +3025,6 @@ function startGame(mapGrid, customCellData, freeObjsData) {
   
   // Build 3D map
   buildMap(grid, customCellData || null);
-  buildReflection();
-  // Загружаем свободно размещённые объекты (декор не на сетке)
-  if (freeObjsData && freeObjsData.length > 0) {
-    freeObjsData.forEach(fo => {
-      const obj = assets.clone(fo.modelKey);
-      if (!obj) return;
-      // Применяем сохранённый scale (в редакторе scale хранится как число)
-      const sc = typeof fo.scale === 'number' ? fo.scale : 1;
-      obj.scale.set(sc, sc, sc);
-      obj.position.set(fo.pos.x, fo.pos.y, fo.pos.z);
-      if (fo.rot) obj.rotation.set(fo.rot.x, fo.rot.y, fo.rot.z);
-      obj.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
-      obj.userData = { freeObj: true, modelKey: fo.modelKey };
-      scene.add(obj);
-      tileObjects.push(obj); // чтобы попало в отражение
-    });
-    buildReflection(); // перестроим отражение с учётом freeObjs
-  }
   
   // Show game UI
   document.getElementById('main-menu').classList.add('hidden');
@@ -3238,7 +3120,7 @@ function setupEvents() {
   document.getElementById('btn-deselect').addEventListener('click', deselectAll);
   
   // Main menu
-  document.getElementById('btn-play').addEventListener('click', () => startGame(DEFAULT_MAP, DEFAULT_CELL_DATA, DEFAULT_FREE_OBJS));
+  document.getElementById('btn-play').addEventListener('click', () => startGame(DEFAULT_MAP));
   document.getElementById('btn-maps').addEventListener('click', openMyMaps);
   document.getElementById('btn-maps-close').addEventListener('click', () => {
     document.getElementById('my-maps-modal').classList.add('hidden');
@@ -3247,7 +3129,7 @@ function setupEvents() {
   setupEditorEvents();
   
   // Game over
-  document.getElementById('btn-go-retry').addEventListener('click', () => startGame(DEFAULT_MAP, DEFAULT_CELL_DATA, DEFAULT_FREE_OBJS));
+  document.getElementById('btn-go-retry').addEventListener('click', () => startGame(DEFAULT_MAP));
   document.getElementById('btn-go-menu').addEventListener('click', goToMenu);
   document.getElementById('btn-win-menu').addEventListener('click', goToMenu);
 }
