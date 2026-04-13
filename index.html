@@ -1,0 +1,3492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Tower Defense 3D</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@800;900&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+/* Мультяшная обводка текста - работает везде */
+.outlined {
+  color: #fff;
+  -webkit-text-stroke: 5px #000;
+  paint-order: stroke fill;
+  font-weight: 900;
+  font-family: 'Nunito', system-ui, sans-serif;
+  line-height: 1;
+}
+body{
+  background:#87ceeb; /* небо как фолбэк */
+  overflow:hidden;
+  font-family:'Nunito','SF Pro Rounded',system-ui,sans-serif;
+  color:#fff;
+  touch-action:none;
+}
+#canvas{display:block;width:100vw;height:100vh;position:fixed;top:0;left:0;z-index:0;}
+
+/* ── SCREENS ── */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;}
+.screen.hidden{display:none;}
+
+/* ── LOADING ── */
+#loading-screen{background:linear-gradient(180deg,#a8e6ff 0%,#d4f5ff 100%);}
+#loading-screen .loader-title{font-size:1.6rem;font-weight:900;color:#fff;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;margin-bottom:1.4rem;}
+.progress-bar{width:min(260px,70vw);height:10px;background:rgba(255,255,255,.4);border-radius:20px;overflow:hidden;border:2px solid #fff;}
+.progress-fill{height:100%;background:#f5a623;border-radius:20px;transition:width .3s;}
+.progress-label{font-size:.75rem;color:rgba(255,255,255,.8);margin-top:7px;font-weight:700;}
+
+/* ── MAIN MENU ── */
+#main-menu{background:linear-gradient(180deg,#a8e6ff 0%,#c5f0ff 100%);}
+#main-menu .logo{font-size:clamp(2.4rem,10vw,3.6rem);font-weight:900;color:#fff;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;margin-bottom:.3rem;letter-spacing:-.01em;}
+#main-menu .subtitle{font-size:.85rem;color:rgba(255,255,255,.85);font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:2.5rem;}
+.menu-btn{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:min(240px,72vw);padding:.9rem 1.6rem;margin:.35rem 0;
+  border:3px solid #000;background:#fff;color:#222;
+  font-family:inherit;font-size:1rem;font-weight:900;cursor:pointer;
+  border-radius:50px;box-shadow:0 4px 0 #000;
+  transition:transform .1s,box-shadow .1s;
+}
+.menu-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #000;}
+.menu-btn.primary{background:#f5a623;color:#fff;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;}
+.menu-btn .ico{flex-shrink:0;}
+
+/* ── CARTOON NUMBER (жирный с обводкой) ── */
+.cartoon-num{
+  font-family:'Nunito',system-ui,sans-serif;
+  font-weight:900;
+  color:#fff;
+  -webkit-text-stroke: 5px #000;
+  paint-order: stroke fill;
+  line-height:1;
+  position:relative;
+}
+
+/* ─── HUD ─── */
+#hud{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:50;}
+#hud.hidden{display:none;}
+
+/* ВЕРХ-ЛЕВО: сердце большое + число, молния + число */
+#hud-tl{
+  position:absolute;top:12px;left:10px;
+  display:flex;flex-direction:column;gap:2px;
+  pointer-events:none;
+}
+/* Ряд 1: сердце + "20" + [синий круг] + "0/20" */
+#hud-row1{display:flex;align-items:center;gap:4px;}
+#hud-heart{ width:64px; height:64px; flex-shrink:0; }
+#hud-lives{font-size:3.6rem;display:block;}
+#hud-wave-badge{
+  width:32px;height:32px;
+  background:#2979ff;
+  border-radius:50%;border:2.5px solid #000;
+  box-shadow:0 2px 0 #000;
+  display:flex;align-items:center;justify-content:center;
+  margin-left:6px;flex-shrink:0;
+}
+#hud-wave-badge img{width:16px;height:16px; filter: brightness(3) contrast(1.5); }
+#hud-gold{font-size:1rem;margin-left:4px;display:block;}
+
+/* Ряд 2: молния + золото/ресурс */
+#hud-row2{display:flex;align-items:center;gap:4px;margin-top:2px;}
+#hud-bolt{
+  width:50px;height:50px;
+  background:url(assets/icons/ic_energy.png) center/contain no-repeat;
+  /* Насыщенный жёлтый — saturate(12) даёт чистый яркий жёлтый */
+  filter: sepia(1) saturate(12) hue-rotate(8deg) brightness(1.1);
+}
+#hud-wave-text{font-size:2.8rem;display:block;}
+
+/* ВЕРХ-ПРАВО: X кнопка + зелёная кнопка */
+#hud-tr{
+  position:absolute;top:12px;right:12px;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  pointer-events:auto;
+}
+.circ-btn{
+  width:60px;height:60px;
+  border-radius:50%;
+  border:4px solid #000;
+  outline:3px solid #fff;
+  outline-offset:-7px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.5);
+  transition:transform .1s,box-shadow .1s;flex-shrink:0;
+}
+.circ-btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.5);}
+.circ-btn img{width:30px;height:30px;}
+#btn-exit{background:#fff;}
+/* Крестик: белая кнопка, иконка покрашена в #f54242 через mask */
+/* btn-exit icon handled via inline div mask */
+#btn-start-wave{background:#4ac94a;}
+/* Белая иконка с чёрным border на зелёном фоне */
+#btn-start-wave img{ filter: brightness(3) contrast(1.5); }
+
+/* НИЗ-ПРАВО: cam btn + speed btn */
+#hud-br{
+  position:absolute;
+  bottom:calc(var(--panel-h,220px) + 14px);
+  right:12px;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  pointer-events:auto;
+}
+#cam-mode-btn{
+  width:58px;height:58px;background:#fff;
+  border-radius:50%;border:3px solid #000;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.5);
+  transition:transform .1s,box-shadow .1s;
+}
+#cam-mode-btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.5);}
+#cam-mode-btn img{width:30px;height:30px; filter: brightness(0.3) contrast(2); }
+#cam-mode-btn.hidden{display:none;}
+#btn-speed{
+  width:58px;height:58px;
+  background:#f5a623;border-radius:50%;border:3px solid #000;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.5);
+  transition:transform .1s,box-shadow .1s;
+  font-family:'Nunito',sans-serif;font-weight:900;font-size:1.1rem;
+  color:#fff;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;
+}
+#btn-speed:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.5);}
+
+/* ── BOTTOM PANEL ── */
+#bottom-panel{
+  position:fixed;bottom:0;left:0;right:0;
+  background:#fff5e0;
+  border-radius:26px 26px 0 0;
+  border:3px solid #000;border-bottom:none;
+  z-index:50;padding-bottom:var(--safe-b);
+  box-shadow:0 -4px 0 rgba(0,0,0,.2);
+}
+#bottom-panel.hidden{display:none;}
+
+/* Табы: SHOP + TOWERS + ANIMAL в одну строку */
+.tab-bar{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 12px 8px;
+}
+.tab-shop,.tab-btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:9px 16px;
+  border-radius:22px;border:3px solid #000;
+  font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:900;
+  cursor:pointer;box-shadow:0 3px 0 #000;
+  transition:transform .1s,box-shadow .1s;
+  white-space:nowrap;
+}
+.tab-shop:active,.tab-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #000;}
+.tab-shop{background:#f5a623;color:#fff;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;}
+/* ic_store.png: white fill + black border on orange — brighten grey to white, keep black outline */
+.tab-shop img{width:22px;height:22px;filter:brightness(3) contrast(1.5);}
+.tab-btn img{width:20px;height:20px;filter:none;}
+.tab-btn{background:#fff5e0;color:#333;}
+.tab-btn.active{background:#f5a623;color:#fff;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;}
+.tab-spacer{flex:1;}
+
+.tab-content{display:none;padding:4px 10px 10px;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;}
+.tab-content.active{display:block;}
+
+/* карточки юнитов */
+.item-card{
+  display:inline-flex;flex-direction:column;align-items:center;
+  width:80px;margin-right:8px;padding:6px 4px 6px;
+  background:#fff;border:3px solid #000;border-radius:18px;
+  cursor:pointer;vertical-align:top;
+  box-shadow:0 3px 0 #000;transition:transform .1s,box-shadow .1s;
+}
+.item-card:active{transform:translateY(2px);box-shadow:0 1px 0 #000;}
+.item-card.selected{background:#fff3d0;border-color:#f5a623;}
+.item-card.disabled{opacity:.38;pointer-events:none;}
+.item-icon-wrap{width:52px;height:52px;display:flex;align-items:center;justify-content:center;margin-bottom:2px;}
+.item-icon-wrap img{width:52px;height:52px;object-fit:contain;}
+.item-name{font-size:.58rem;font-weight:900;text-align:center;color:#222;white-space:normal;line-height:1.2;}
+.item-cost{font-size:.65rem;font-weight:900;color:#f5a623;-webkit-text-stroke:3px #000;paint-order:stroke fill;margin-top:1px;}
+
+/* ── TOWER INFO ── */
+#tower-info{
+  position:fixed;bottom:0;left:0;right:0;
+  background:#fff5e0;border-radius:28px 28px 0 0;
+  border-top:3px solid #000;
+  padding:16px 16px calc(16px + var(--safe-b));
+  z-index:60;box-shadow:0 -4px 0 rgba(0,0,0,.15);
+  transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);
+}
+#tower-info.visible{transform:translateY(0);}
+#tower-info.hidden{transform:translateY(100%);}
+#tower-info h3{
+  font-size:1.1rem;font-weight:900;color:#222;
+  text-align:center;margin-bottom:10px;
+}
+.ti-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;}
+.ti-stat{
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:.75rem;font-weight:800;
+  background:#fff;border:2px solid #000;padding:6px 10px;border-radius:14px;
+}
+.ti-stat span:last-child{font-weight:900;color:#f5a623;}
+.ti-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;}
+.ti-btn{
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  padding:10px 4px;border-radius:16px;border:3px solid #000;
+  font-family:'Nunito',sans-serif;font-size:.72rem;font-weight:900;
+  cursor:pointer;box-shadow:0 3px 0 #000;transition:transform .1s,box-shadow .1s;
+}
+.ti-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #000;}
+.ti-btn img{width:18px;height:18px;}
+.ti-upgrade img,.ti-sell img{filter:brightness(0) invert(1);}
+.ti-upgrade{background:#4ac94a;color:#fff;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;}
+.ti-sell{background:#f5a623;color:#fff;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;}
+.ti-close{background:#fff;color:#333;}
+.ti-close img{filter:none;}
+
+/* ── WAVE NOTIFY ── */
+#wave-notify{position:fixed;top:35%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:200;pointer-events:none;transition:opacity .5s;}
+#wave-notify.hidden{opacity:0;}
+#wave-notify .wn-title{font-size:clamp(2rem,9vw,3.5rem);font-weight:900;color:#fff;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;}
+#wave-notify .wn-sub{font-size:.9rem;color:rgba(255,255,255,.85);font-weight:700;margin-top:4px;}
+
+/* ── GAME OVER / WIN ── */
+#game-over-screen{background:rgba(0,0,0,.7);backdrop-filter:blur(8px);}
+#game-over-screen h1{font-size:clamp(2.5rem,10vw,4rem);font-weight:900;color:#ff6b6b;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;margin-bottom:.8rem;}
+#win-screen{background:rgba(0,0,0,.7);backdrop-filter:blur(8px);}
+#win-screen h1{font-size:clamp(2.5rem,10vw,4rem);font-weight:900;color:#4ac94a;-webkit-text-stroke:4px #000;paint-order:stroke fill;text-shadow:none;margin-bottom:.8rem;}
+.result-info{color:rgba(255,255,255,.85);font-size:.95rem;font-weight:700;margin-bottom:1.5rem;}
+
+/* ── TOOLTIP ── */
+#tooltip{position:fixed;background:#fff;border:3px solid #000;border-radius:14px;padding:8px 12px;font-size:.75rem;z-index:300;pointer-events:none;max-width:180px;box-shadow:0 3px 0 #000;}
+#tooltip.hidden{display:none;}
+#tooltip h4{color:#222;margin-bottom:3px;font-weight:900;}
+#tooltip p{color:#666;line-height:1.35;font-weight:700;}
+
+/* ── EDITOR ── */
+#editor-screen{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;background:transparent;pointer-events:none;}
+#editor-screen.hidden{display:none;}
+#ed-topbar{
+  display:flex;align-items:center;gap:5px;padding:7px 9px;
+  background:rgba(255,245,224,.95);border-bottom:3px solid #000;
+  flex-shrink:0;pointer-events:auto;overflow-x:auto;-webkit-overflow-scrolling:touch;
+}
+#ed-topbar::-webkit-scrollbar{display:none;}
+#ed-topbar-title{font-weight:900;font-size:.85rem;color:#222;white-space:nowrap;margin-right:4px;}
+.ed-btn{
+  display:flex;align-items:center;justify-content:center;gap:4px;
+  padding:7px 11px;border-radius:22px;border:2px solid #000;
+  background:#fff;color:#222;
+  font-family:'Nunito',sans-serif;font-size:.68rem;font-weight:900;
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+  box-shadow:0 2px 0 #000;transition:transform .1s,box-shadow .1s;
+}
+.ed-btn:active{transform:translateY(2px);box-shadow:none;}
+.ed-btn img{width:16px;height:16px;filter:brightness(0);}
+.ed-btn.gold{background:#f5a623;color:#fff;}
+.ed-btn.gold img{filter:brightness(0) invert(1);}
+.ed-btn.green{background:#4ac94a;color:#fff;}
+.ed-btn.green img{filter:brightness(0) invert(1);}
+.ed-btn.red{background:#ff6b6b;color:#fff;}
+.ed-btn.red img{filter:brightness(0) invert(1);}
+.ed-btn.active-on{background:#7c9eff;color:#fff;border-color:#000;}
+.ed-btn.active-on img{filter:brightness(0) invert(1);}
+.ed-btn.erase-on{background:#ff6b6b;color:#fff;border-color:#000;}
+.ed-btn.erase-on img{filter:brightness(0) invert(1);}
+.ed-spacer{flex:1;min-width:3px;}
+#ed-body{display:flex;flex:1;overflow:hidden;}
+#ed-palette{
+  width:70px;background:rgba(255,245,224,.92);border-right:3px solid #000;
+  overflow-y:auto;flex-shrink:0;padding:4px 3px;
+  pointer-events:auto;-webkit-overflow-scrolling:touch;
+}
+#ed-palette::-webkit-scrollbar{display:none;}
+.ed-cat{color:#888;font-size:.46rem;font-weight:900;text-align:center;padding:6px 0 2px;letter-spacing:.08em;text-transform:uppercase;}
+.ed-tile-btn{
+  display:flex;flex-direction:column;align-items:center;
+  padding:5px 2px;margin-bottom:3px;
+  background:#fff;border:2px solid #ddd;border-radius:12px;
+  cursor:pointer;pointer-events:auto;text-align:center;
+  transition:all .1s;box-shadow:0 2px 0 #ccc;
+}
+.ed-tile-btn:active{transform:translateY(1px);box-shadow:none;}
+.ed-tile-btn.active{border-color:#f5a623;background:#fff3d0;box-shadow:0 2px 0 #f5a623;}
+.ed-tile-icon{width:28px;height:28px;display:flex;align-items:center;justify-content:center;}
+.ed-tile-icon img{width:22px;height:22px;filter:none;opacity:.7;}
+.ed-tile-label{font-size:.45rem;color:#888;margin-top:2px;line-height:1.2;font-weight:700;}
+#ed-canvas-area{flex:1;position:relative;}
+#ed-info{
+  position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
+  background:rgba(255,245,224,.9);color:#555;
+  font-size:.7rem;font-weight:700;
+  padding:5px 14px;border-radius:22px;pointer-events:none;z-index:10;
+  white-space:nowrap;border:2px solid #000;box-shadow:0 2px 0 #000;
+}
+
+/* ── MAPS MODAL ── */
+#my-maps-modal{background:rgba(0,0,0,.5);backdrop-filter:blur(8px);}
+.maps-modal-inner{
+  background:#fff5e0;border-radius:24px;border:3px solid #000;
+  padding:22px;width:min(340px,88vw);max-height:75vh;overflow-y:auto;
+  box-shadow:0 6px 0 #000;
+}
+.maps-modal-title{font-size:1.1rem;font-weight:900;color:#222;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.maps-modal-title img{width:24px;height:24px;filter:brightness(0);}
+</style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="loading-screen" class="screen">
+  <div class="loader-title">Tower Defense</div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  <div class="progress-label" id="progress-label">Loading...</div>
+</div>
+
+<!-- Main Menu -->
+<div id="main-menu" class="screen hidden">
+  <div class="logo">Tower Defense</div>
+  <div class="subtitle">3D Strategy</div>
+  <button class="menu-btn primary" id="btn-play">
+    <img class="ico" src="assets/icons/ic_target.png" style="width:22px;height:22px;filter:brightness(0) invert(1)">
+    Play
+  </button>
+  <button class="menu-btn" id="btn-maps">
+    <img class="ico" src="assets/icons/ic_map.png" style="width:22px;height:22px;filter:brightness(0)">
+    My Maps
+  </button>
+  <button class="menu-btn" id="btn-editor">
+    <img class="ico" src="assets/icons/ic_settings.png" style="width:22px;height:22px;filter:brightness(0)">
+    Map Editor
+  </button>
+</div>
+
+<!-- HUD (поверх canvas, абсолютные позиции) -->
+<div id="hud" class="hidden">
+
+  <!-- ВЕРХ-ЛЕВО: сердце + жизни + значок волны + голд + строка молния -->
+  <div id="hud-tl">
+    <div id="hud-row1">
+      <img id="hud-heart" src="assets/icons/ic_love.png">
+      <span class="cartoon-num" id="hud-lives">20</span>
+      <div id="hud-wave-badge">
+        <img src="assets/icons/ic_star.png" alt="">
+      </div>
+      <span class="cartoon-num" id="hud-gold">0/20</span>
+    </div>
+    <div id="hud-row2">
+      <div id="hud-bolt"></div>
+      <span class="cartoon-num" id="hud-wave-text">300</span>
+    </div>
+  </div>
+
+  <!-- ВЕРХ-ПРАВО: X + старт волны -->
+  <div id="hud-tr">
+    <button class="circ-btn" id="btn-exit">
+      <img src="assets/icons/ic_close.png" style="width:28px;height:28px;">
+    </button>
+    <button class="circ-btn" id="btn-start-wave">
+      <img src="assets/icons/ic_target.png" alt="">
+    </button>
+  </div>
+
+  <!-- НИЗ-ПРАВО: режим камеры + скорость -->
+  <div id="hud-br">
+    <button id="cam-mode-btn" class="hidden">
+      <img src="assets/icons/ic_cursor.png" alt="">
+    </button>
+    <button id="btn-speed">1x</button>
+  </div>
+
+  <div id="wave-info" style="display:none">Ready</div>
+</div>
+
+<!-- Bottom Panel -->
+<div id="bottom-panel" class="hidden">
+  <div class="tab-bar">
+    <div class="tab-shop" id="tab-shop-btn">
+      <img src="assets/icons/ic_store.png" alt="">
+      SHOP
+    </div>
+    <div class="tab-btn active" data-tab="towers">TOWERS</div>
+    <div class="tab-btn" data-tab="animals">ANIMAL</div>
+  </div>
+  <div class="tab-content active" id="tab-towers"></div>
+  <div class="tab-content" id="tab-animals"></div>
+</div>
+
+<!-- Tower Info bottom sheet -->
+<div id="tower-info" class="hidden">
+  <h3 id="ti-name">Tower</h3>
+  <div class="ti-stats">
+    <div class="ti-stat"><span>Level</span><span id="ti-level">1</span></div>
+    <div class="ti-stat"><span>Damage</span><span id="ti-damage">0</span></div>
+    <div class="ti-stat"><span>Range</span><span id="ti-range">0</span></div>
+    <div class="ti-stat"><span>Speed</span><span id="ti-speed">0</span></div>
+  </div>
+  <div class="ti-btns">
+    <button class="ti-btn ti-upgrade" id="btn-upgrade">
+      <img src="assets/icons/ic_plus.png" alt=""> Upgrade
+    </button>
+    <button class="ti-btn ti-sell" id="btn-sell">
+      <img src="assets/icons/ic_star.png" alt="" style="filter:brightness(0) invert(1)"> Sell
+    </button>
+    <button class="ti-btn ti-close" id="btn-deselect">
+      <img src="assets/icons/ic_close.png" alt=""> Close
+    </button>
+  </div>
+</div>
+
+<!-- Wave Notify -->
+<div id="wave-notify" class="hidden">
+  <div class="wn-title" id="wn-title">Wave 1</div>
+  <div class="wn-sub" id="wn-sub">Defend!</div>
+</div>
+
+<!-- Game Over -->
+<div id="game-over-screen" class="screen hidden">
+  <h1>Game Over</h1>
+  <div class="result-info" id="go-info">Wave: 0</div>
+  <button class="menu-btn primary" id="btn-go-retry">
+    <img src="assets/icons/ic_refresh.png" style="width:22px;filter:brightness(0) invert(1)"> Retry
+  </button>
+  <button class="menu-btn" id="btn-go-menu">
+    <img src="assets/icons/ic_home.png" style="width:22px;filter:brightness(0)"> Menu
+  </button>
+</div>
+
+<!-- Win Screen -->
+<div id="win-screen" class="screen hidden">
+  <h1>Victory!</h1>
+  <div class="result-info" id="win-info">All waves survived!</div>
+  <button class="menu-btn primary" id="btn-win-menu">
+    <img src="assets/icons/ic_home.png" style="width:22px;filter:brightness(0) invert(1)"> Menu
+  </button>
+</div>
+
+<!-- Map Editor -->
+<div id="editor-screen" class="hidden">
+  <div id="ed-topbar">
+    <span id="ed-topbar-title">EDITOR</span>
+    <div class="ed-spacer"></div>
+    <button class="ed-btn" id="ed-rotate-ccw"><img src="assets/icons/ic_refresh.png" style="transform:scaleX(-1)"></button>
+    <button class="ed-btn" id="ed-rotate-cw"><img src="assets/icons/ic_refresh.png"></button>
+    <button class="ed-btn" id="ed-free-place"><img src="assets/icons/ic_cursor.png"> Free</button>
+    <button class="ed-btn" id="ed-gizmo-mode" style="display:none"><img src="assets/icons/ic_magnet.png"> Move</button>
+    <button class="ed-btn" id="ed-erase"><img src="assets/icons/ic_minus.png"> Erase</button>
+    <button class="ed-btn" id="ed-clear"><img src="assets/icons/ic_close.png"> Clear</button>
+    <button class="ed-btn green" id="ed-save"><img src="assets/icons/ic_inbox.png"> Save</button>
+    <button class="ed-btn gold" id="ed-play"><img src="assets/icons/ic_target.png"> Play</button>
+    <button class="ed-btn red" id="btn-editor-back"><img src="assets/icons/ic_close.png"></button>
+  </div>
+  <div id="ed-body">
+    <div id="ed-palette"></div>
+    <div id="ed-canvas-area">
+      <div id="ed-info">Select tile → tap to place</div>
+    </div>
+  </div>
+</div>
+
+<!-- Single shared canvas -->
+<canvas id="canvas"></canvas>
+
+<!-- My Maps Modal -->
+<div id="my-maps-modal" class="screen hidden">
+  <div class="maps-modal-inner">
+    <div class="maps-modal-title">
+      <span class="ico" style="background-image:url(assets/icons/ic_map_fill.png)"></span>
+      My Saved Maps
+    </div>
+    <div id="my-maps-list"></div>
+    <button class="menu-btn" id="btn-maps-close" style="margin-top:14px;width:100%;">
+      <span class="ico" style="background-image:url(assets/icons/ic_close_fill.png)"></span>
+      Close
+    </button>
+  </div>
+</div>
+
+<!-- Tooltip -->
+<div id="tooltip" class="hidden"><h4 id="tt-name"></h4><p id="tt-desc"></p></div>
+
+<script type="module">
+// ============================================================
+// TOWER DEFENSE 3D — Full Game
+// Uses Three.js r128 CDN + GLTFLoader
+// ============================================================
+
+// Dynamically load Three.js
+async function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = res;
+    s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+const BASE = (()=>{
+  const l = window.location.href;
+  if (l.startsWith('file://')) return './';
+  return l.endsWith('/') ? l : l.substring(0, l.lastIndexOf('/')+1);
+})();
+
+function updateProgress(pct, label) {
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = label;
+}
+
+updateProgress(5, 'Loading Three.js...');
+await loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js');
+updateProgress(15, 'Loading loaders...');
+
+// GLB Loader with external texture support (Kenney colormap.png)
+// Pre-loads the shared colormap texture once, then reuses it for all models
+
+const _textureCache = {};
+function loadTextureOnce(url) {
+  if (_textureCache[url]) return _textureCache[url];
+  const tex = new THREE.TextureLoader().load(url);
+  tex.flipY = false;
+  tex.magFilter = THREE.LinearFilter;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.encoding = THREE.sRGBEncoding;
+  _textureCache[url] = tex;
+  return tex;
+}
+
+class GLBLoader {
+  constructor(manager) { this.manager = manager; }
+  
+  load(url, onLoad, onProgress, onError) {
+    fetch(url)
+      .then(r => r.arrayBuffer())
+      .then(buf => this._parse(buf, url, onLoad))
+      .catch(onError || console.error);
+  }
+
+  _parse(buffer, url, onLoad) {
+    const magic = new Uint32Array(buffer, 0, 1)[0];
+    if (magic !== 0x46546C67) { console.error('Not a GLB file:', url); return; }
+    
+    let jsonChunk = null, binChunk = null;
+    let offset = 12;
+    const dv = new DataView(buffer);
+    
+    while (offset < buffer.byteLength) {
+      const chunkLen = dv.getUint32(offset, true);
+      const chunkType = dv.getUint32(offset + 4, true);
+      offset += 8;
+      if (chunkType === 0x4E4F534A) {
+        jsonChunk = JSON.parse(new TextDecoder().decode(new Uint8Array(buffer, offset, chunkLen)));
+      } else if (chunkType === 0x004E4942) {
+        binChunk = buffer.slice(offset, offset + chunkLen);
+      }
+      offset += chunkLen;
+    }
+    
+    if (!jsonChunk) { console.error('No JSON chunk in GLB'); return; }
+    
+    // Resolve base URL for external texture references
+    const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
+    const scene = this._buildScene(jsonChunk, binChunk, baseUrl);
+    onLoad({ scene });
+  }
+
+  _buildScene(gltf, binChunk, baseUrl) {
+    const group = new THREE.Group();
+    
+    // Build buffers
+    const bufferViews = [];
+    if (gltf.bufferViews) {
+      for (const bv of gltf.bufferViews) {
+        bufferViews.push(new Uint8Array(binChunk, bv.byteOffset || 0, bv.byteLength));
+      }
+    }
+
+    // Build accessors
+    const getAccessorData = (idx) => {
+      if (idx === undefined) return null;
+      const acc = gltf.accessors[idx];
+      const bv = bufferViews[acc.bufferView];
+      const compMap = { SCALAR:1, VEC2:2, VEC3:3, VEC4:4, MAT4:16 };
+      const n = compMap[acc.type] || 1;
+      const byteOffset = acc.byteOffset || 0;
+      const sliced = bv.slice(byteOffset);
+      if (acc.componentType === 5126) return new Float32Array(sliced.buffer, sliced.byteOffset, acc.count * n);
+      if (acc.componentType === 5125) return new Uint32Array(sliced.buffer, sliced.byteOffset, acc.count * n);
+      if (acc.componentType === 5123) return new Uint16Array(sliced.buffer, sliced.byteOffset, acc.count * n);
+      if (acc.componentType === 5121) return new Uint8Array(sliced.buffer, sliced.byteOffset, acc.count * n);
+      return null;
+    };
+
+    // Resolve textures - load external URI textures (e.g. Textures/colormap.png)
+    const textures = [];
+    if (gltf.textures && gltf.images) {
+      for (const tex of gltf.textures) {
+        const imgDef = gltf.images[tex.source];
+        if (imgDef && imgDef.uri) {
+          const texUrl = baseUrl + imgDef.uri;
+          textures.push(loadTextureOnce(texUrl));
+        } else if (imgDef && imgDef.bufferView !== undefined) {
+          // Embedded image in binary chunk
+          const bv = bufferViews[imgDef.bufferView];
+          const blob = new Blob([bv], { type: imgDef.mimeType || 'image/png' });
+          const objUrl = URL.createObjectURL(blob);
+          const t = new THREE.TextureLoader().load(objUrl);
+          t.flipY = false;
+          t.encoding = THREE.sRGBEncoding;
+          textures.push(t);
+        } else {
+          textures.push(null);
+        }
+      }
+    }
+
+    // Build materials with texture support
+    const materials = [];
+    if (gltf.materials) {
+      for (const mat of gltf.materials) {
+        const m = new THREE.MeshLambertMaterial();
+        if (mat.pbrMetallicRoughness) {
+          const pbr = mat.pbrMetallicRoughness;
+          if (pbr.baseColorTexture !== undefined && textures[pbr.baseColorTexture.index]) {
+            m.map = textures[pbr.baseColorTexture.index];
+          }
+          if (pbr.baseColorFactor) {
+            const [r,g,b,a] = pbr.baseColorFactor;
+            m.color.setRGB(r,g,b);
+            if (a < 1) { m.transparent = true; m.opacity = a; }
+          }
+        }
+        if (mat.doubleSided) m.side = THREE.DoubleSide;
+        materials.push(m);
+      }
+    }
+
+    // Build meshes
+    const buildMesh = (meshIdx) => {
+      const mesh = gltf.meshes[meshIdx];
+      const group = new THREE.Group();
+      for (const prim of mesh.primitives) {
+        const geo = new THREE.BufferGeometry();
+        const attrs = prim.attributes;
+        if (attrs.POSITION !== undefined) {
+          const pos = getAccessorData(attrs.POSITION);
+          if (pos) geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        }
+        if (attrs.NORMAL !== undefined) {
+          const nor = getAccessorData(attrs.NORMAL);
+          if (nor) geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+        }
+        if (attrs.TEXCOORD_0 !== undefined) {
+          const uv = getAccessorData(attrs.TEXCOORD_0);
+          if (uv) geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+        }
+        if (prim.indices !== undefined) {
+          const idx = getAccessorData(prim.indices);
+          if (idx) geo.setIndex(new THREE.BufferAttribute(idx, 1));
+        }
+        if (!geo.attributes.normal) geo.computeVertexNormals();
+        const mat = (prim.material !== undefined && materials[prim.material]) 
+          ? materials[prim.material] 
+          : new THREE.MeshLambertMaterial({ color: 0x88aa88 });
+        group.add(new THREE.Mesh(geo, mat));
+      }
+      return group;
+    };
+
+    // Build nodes
+    const buildNode = (nodeIdx) => {
+      const node = gltf.nodes[nodeIdx];
+      const obj = new THREE.Group();
+      obj.name = node.name || '';
+      if (node.translation) obj.position.fromArray(node.translation);
+      if (node.rotation) obj.quaternion.fromArray(node.rotation);
+      if (node.scale) obj.scale.fromArray(node.scale);
+      if (node.matrix) {
+        const m = new THREE.Matrix4();
+        m.fromArray(node.matrix);
+        obj.applyMatrix4(m);
+      }
+      if (node.mesh !== undefined) obj.add(buildMesh(node.mesh));
+      if (node.children) node.children.forEach(c => obj.add(buildNode(c)));
+      return obj;
+    };
+
+    // Build scene
+    if (gltf.scene !== undefined && gltf.scenes) {
+      const sc = gltf.scenes[gltf.scene];
+      if (sc.nodes) sc.nodes.forEach(n => group.add(buildNode(n)));
+    } else if (gltf.nodes) {
+      gltf.nodes.forEach((_, i) => group.add(buildNode(i)));
+    }
+
+    return group;
+  }
+}
+
+// ============================================================
+// ASSET MANAGER
+// ============================================================
+class AssetManager {
+  constructor() {
+    this.models = {};
+    this.loader = new GLBLoader();
+    this.total = 0;
+    this.loaded = 0;
+  }
+
+  async loadAll(assets) {
+    this.total = Object.keys(assets).length;
+    const promises = Object.entries(assets).map(([key, path]) =>
+      new Promise((res) => {
+        this.loader.load(
+          BASE + path,
+          (gltf) => {
+            this.models[key] = gltf.scene;
+            this.loaded++;
+            const pct = 15 + Math.round((this.loaded / this.total) * 70);
+            updateProgress(pct, `Loading ${key}...`);
+            res();
+          },
+          undefined,
+          (err) => {
+            console.warn(`Failed to load ${key}:`, err);
+            this.models[key] = null;
+            this.loaded++;
+            res();
+          }
+        );
+      })
+    );
+    await Promise.all(promises);
+  }
+
+  clone(key) {
+    if (!this.models[key]) return null;
+    return this.models[key].clone(true);
+  }
+}
+
+// ============================================================
+// GAME CONSTANTS
+// ============================================================
+const TILE_SIZE = 1;
+const GRID_W = 20;
+const GRID_H = 20;
+
+const TILE_GRASS = 0;
+const TILE_ROAD = 1;
+const TILE_WATER = 2;
+const TILE_BRIDGE = 3;
+const TILE_TREE = 4;
+const TILE_ROCK = 5;
+const TILE_START = 6;
+const TILE_END = 7;
+
+// Default map — 4 lanes, lush decoration
+// COORDINATE: row=z (south+), col=x (east+)
+// corner-round rot=0 connects NORTH(row-1) and EAST(col+1)
+// Proof: road verts reach +x edge and -z edge at boundary
+// ── DEFAULT MAP (твоя карта "base") ──────────────────────────────────────
+const DEFAULT_MAP      = [[0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 5, 0, 0, 0, 1, 2, 1, 1, 1, 4, 1, 4, 1, 1, 0, 0, 0], [0, 0, 5, 4, 0, 0, 0, 0, 2, 0, 4, 4, 0, 5, 0, 1, 4, 1, 0, 0], [1, 0, 0, 1, 1, 1, 1, 1, 2, 5, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0], [4, 0, 0, 1, 0, 0, 0, 1, 2, 1, 1, 1, 1, 1, 1, 1, 5, 4, 0, 0], [2, 2, 0, 1, 1, 1, 0, 1, 3, 1, 0, 0, 0, 0, 0, 1, 1, 0, 4, 0], [5, 2, 2, 2, 2, 3, 2, 2, 2, 0, 0, 0, 0, 0, 4, 0, 1, 1, 0, 5], [4, 0, 1, 1, 1, 1, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0], [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0], [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 4, 0, 1, 4, 0], [0, 0, 1, 0, 0, 4, 0, 0, 0, 0, 5, 4, 0, 5, 1, 0, 0, 1, 0, 4], [0, 0, 1, 0, 0, 0, 0, 0, 4, 0, 4, 0, 0, 0, 0, 4, 0, 1, 0, 0], [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 3, 2, 0], [4, 0, 1, 4, 0, 0, 0, 0, 4, 0, 0, 0, 1, 1, 1, 0, 0, 1, 5, 0], [0, 0, 1, 0, 5, 0, 0, 5, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0], [0, 0, 6, 0, 0, 0, 0, 4, 7, 1, 1, 0, 0, 0, 0, 0, 0, 0, 4, 0], [0, 0, 4, 0, 0, 0, 0, 5, 4, 5, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0], [0, 5, 0, 0, 4, 0, 0, 0, 0, 1, 1, 4, 5, 0, 4, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]];
+const DEFAULT_CELL_DATA = {"10,10": {"modelKey": "snow_tile_rock", "rot": 0, "tileType": 5, "tint": null}, "2,2": {"modelKey": "tile_rock", "rot": 0, "tileType": 5, "tint": null}, "3,2": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "3,3": {"modelKey": "tile_corner_round", "rot": 0, "tileType": 1, "tint": null}, "2,3": {"modelKey": "tile_tree", "rot": 0, "tileType": 4, "tint": null}, "2,4": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "3,4": {"modelKey": "tile_straight", "rot": 7.853981633974483, "tileType": 1, "tint": null}, "4,4": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,3": {"modelKey": "tile_straight", "rot": 6.283185307179586, "tileType": 1, "tint": null}, "4,2": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "5,2": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "5,3": {"modelKey": "tile_corner_round", "rot": -4.71238898038469, "tileType": 1, "tint": null}, "5,4": {"modelKey": "tile_straight", "rot": 4.71238898038469, "tileType": 1, "tint": null}, "5,5": {"modelKey": "tile_corner_round", "rot": -7.853981633974483, "tileType": 1, "tint": null}, "4,5": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "3,5": {"modelKey": "tile_straight", "rot": 7.853981633974483, "tileType": 1, "tint": null}, "2,5": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "2,6": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "3,6": {"modelKey": "tile_straight", "rot": 7.853981633974483, "tileType": 1, "tint": null}, "4,6": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "5,6": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "6,2": {"modelKey": "tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "6,3": {"modelKey": "tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "6,4": {"modelKey": "tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "6,5": {"modelKey": "tile_river_bridge", "rot": 1.5707963267948966, "tileType": 3, "tint": null}, "6,6": {"modelKey": "tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "7,3": {"modelKey": "tile_straight", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "7,4": {"modelKey": "tile_straight", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "7,5": {"modelKey": "tile_corner_round", "rot": -3.141592653589793, "tileType": 1, "tint": null}, "7,6": {"modelKey": "tile_tree_double", "rot": 1.5707963267948966, "tileType": 4, "tint": null}, "6,7": {"modelKey": "tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "5,7": {"modelKey": "tile_corner_round", "rot": -4.71238898038469, "tileType": 1, "tint": null}, "4,7": {"modelKey": "tile_straight", "rot": 9.42477796076938, "tileType": 1, "tint": null}, "3,7": {"modelKey": "tile_corner_round", "rot": -7.853981633974483, "tileType": 1, "tint": null}, "2,7": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,8": {"modelKey": "tile_river_straight", "rot": 3.141592653589793, "tileType": 2, "tint": null}, "3,8": {"modelKey": "tile_river_straight", "rot": 3.141592653589793, "tileType": 2, "tint": null}, "5,8": {"modelKey": "tile_river_bridge", "rot": 0, "tileType": 3, "tint": null}, "6,8": {"modelKey": "tile_river_corner", "rot": 3.141592653589793, "tileType": 2, "tint": null}, "7,8": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "7,7": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "8,7": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "8,6": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "8,5": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "8,4": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "8,3": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "7,2": {"modelKey": "tile_corner_round", "rot": 0, "tileType": 1, "tint": null}, "2,8": {"modelKey": "tile_river_slope", "rot": 0, "tileType": 2, "tint": null}, "2,9": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "2,10": {"modelKey": "tile_tree", "rot": 0, "tileType": 4, "tint": null}, "3,9": {"modelKey": "tile_rock", "rot": 0, "tileType": 5, "tint": null}, "3,10": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,9": {"modelKey": "tile_corner_round", "rot": -6.283185307179586, "tileType": 1, "tint": null}, "2,11": {"modelKey": "tile_tree_quad", "rot": 0, "tileType": 4, "tint": null}, "3,11": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,10": {"modelKey": "tile_straight_slope", "rot": 4.71238898038469, "tileType": 1, "tint": null}, "4,11": {"modelKey": "tile_straight_slope", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "1,7": {"modelKey": "tile_slope", "rot": 6.283185307179586, "tileType": 1, "tint": null}, "1,8": {"modelKey": "tile_river_slope", "rot": 3.141592653589793, "tileType": 2, "tint": null}, "1,9": {"modelKey": "tile_slope", "rot": 6.283185307179586, "tileType": 1, "tint": null}, "1,10": {"modelKey": "tile_slope", "rot": 6.283185307179586, "tileType": 1, "tint": null}, "1,11": {"modelKey": "tile_slope", "rot": 0, "tileType": 1, "tint": null}, "1,12": {"modelKey": "tile_tree", "rot": 0, "tileType": 4, "tint": null}, "2,12": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "2,13": {"modelKey": "tile_rock", "rot": 1.5707963267948966, "tileType": 5, "tint": null}, "3,13": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,13": {"modelKey": "tile_straight", "rot": 14.137166941154069, "tileType": 1, "tint": null}, "2,14": {"modelKey": "tower_square_build_a", "rot": 0, "tileType": 0, "tint": null}, "3,14": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,14": {"modelKey": "tile_straight", "rot": 14.137166941154069, "tileType": 1, "tint": null}, "3,15": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,15": {"modelKey": "tile_corner_round", "rot": -1.5707963267948966, "tileType": 1, "tint": null}, "3,12": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "5,14": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "5,15": {"modelKey": "tile_corner_round", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "3,16": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,16": {"modelKey": "tile_crystal", "rot": 0, "tileType": 5, "tint": null}, "5,16": {"modelKey": "tile_corner_round", "rot": 4.71238898038469, "tileType": 1, "tint": null}, "3,17": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,17": {"modelKey": "tile_tree", "rot": 0, "tileType": 4, "tint": null}, "5,17": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "15,10": {"modelKey": "snow_tile_corner_round", "rot": 3.141592653589793, "tileType": 1, "tint": null}, "15,9": {"modelKey": "snow_tile_straight", "rot": 4.71238898038469, "tileType": 1, "tint": null}, "14,9": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "14,10": {"modelKey": "snow_tile_corner_round", "rot": 0, "tileType": 1, "tint": null}, "14,11": {"modelKey": "snow_tile_bump", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "15,11": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "15,12": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "14,12": {"modelKey": "snow_tile_corner_round", "rot": 3.141592653589793, "tileType": 1, "tint": null}, "14,13": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "15,13": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "15,14": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "14,14": {"modelKey": "snow_tile_corner_round", "rot": 7.853981633974483, "tileType": 1, "tint": null}, "13,13": {"modelKey": "snow_tile_straight", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "13,12": {"modelKey": "snow_tile_corner_round", "rot": 6.283185307179586, "tileType": 1, "tint": null}, "13,11": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "12,12": {"modelKey": "snow_tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "12,13": {"modelKey": "snow_tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "12,14": {"modelKey": "snow_tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "13,14": {"modelKey": "snow_tile_corner_round", "rot": 10.995574287564276, "tileType": 1, "tint": null}, "12,15": {"modelKey": "snow_tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "13,15": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "11,14": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "13,10": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "12,10": {"modelKey": "snow_tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "12,11": {"modelKey": "snow_tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "11,11": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "11,10": {"modelKey": "snow_tile_tree", "rot": 0, "tileType": 4, "tint": null}, "11,12": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "13,9": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "13,8": {"modelKey": "snow_tile_tree", "rot": 0, "tileType": 4, "tint": null}, "14,8": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "15,8": {"modelKey": "snow_tile_end_round", "rot": 1.5707963267948966, "tileType": 7, "tint": null}, "11,13": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "14,15": {"modelKey": "snow_tile_straight", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "15,15": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "10,11": {"modelKey": "snow_tile_tree_double", "rot": 1.5707963267948966, "tileType": 4, "tint": null}, "10,12": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "10,13": {"modelKey": "snow_tile_crystal", "rot": 1.5707963267948966, "tileType": 5, "tint": null}, "10,14": {"modelKey": "snow_tile_slope", "rot": 0, "tileType": 1, "tint": null}, "11,15": {"modelKey": "snow_tile_tree_double", "rot": 1.5707963267948966, "tileType": 4, "tint": null}, "12,16": {"modelKey": "snow_tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "13,16": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "14,16": {"modelKey": "snow_tile_bump", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "15,16": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "14,7": {"modelKey": "snow_tile_crystal", "rot": 0, "tileType": 5, "tint": null}, "15,7": {"modelKey": "snow_tile_tree_double", "rot": 0, "tileType": 4, "tint": null}, "14,6": {"modelKey": "snow_wood_structure_high", "rot": 0, "tileType": 0, "tint": null}, "15,6": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "13,17": {"modelKey": "snow_tile_straight", "rot": 0, "tileType": 1, "tint": null}, "14,17": {"modelKey": "snow_tile_corner_round", "rot": 15.707963267948966, "tileType": 1, "tint": null}, "15,17": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "16,17": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "16,16": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "16,15": {"modelKey": "snow_tile_slope", "rot": 7.853981633974483, "tileType": 1, "tint": null}, "16,14": {"modelKey": "snow_tile_slope", "rot": 4.71238898038469, "tileType": 1, "tint": null}, "16,13": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "16,12": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "16,11": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "16,10": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "16,9": {"modelKey": "snow_tile_rock", "rot": 0, "tileType": 5, "tint": null}, "16,8": {"modelKey": "snow_tile_tree", "rot": 0, "tileType": 4, "tint": null}, "16,7": {"modelKey": "snow_tile_crystal", "rot": 0, "tileType": 5, "tint": null}, "17,8": {"modelKey": "snow_wood_structure", "rot": 0, "tileType": 0, "tint": null}, "17,9": {"modelKey": "snow_tile_slope", "rot": 9.42477796076938, "tileType": 1, "tint": null}, "17,10": {"modelKey": "snow_tile_slope", "rot": 9.42477796076938, "tileType": 1, "tint": null}, "17,11": {"modelKey": "snow_tile_tree_double", "rot": 1.5707963267948966, "tileType": 4, "tint": null}, "17,12": {"modelKey": "snow_tile_rock", "rot": 1.5707963267948966, "tileType": 5, "tint": null}, "17,13": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "17,14": {"modelKey": "snow_tile_tree_double", "rot": 3.141592653589793, "tileType": 4, "tint": null}, "17,15": {"modelKey": "snow_tile_slope", "rot": 9.42477796076938, "tileType": 1, "tint": null}, "17,16": {"modelKey": "snow_tile_slope", "rot": 9.42477796076938, "tileType": 1, "tint": null}, "9,11": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "9,12": {"modelKey": "snow_tile_slope", "rot": 4.71238898038469, "tileType": 1, "tint": null}, "9,13": {"modelKey": "snow_tile_slope", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "5,9": {"modelKey": "tile_corner_round", "rot": -9.42477796076938, "tileType": 1, "tint": null}, "5,10": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "6,9": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "6,11": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "5,12": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,12": {"modelKey": "tile_straight", "rot": 14.137166941154069, "tileType": 1, "tint": null}, "5,11": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "5,13": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "6,17": {"modelKey": "tile_corner_round", "rot": 10.995574287564276, "tileType": 1, "tint": null}, "6,16": {"modelKey": "tile_corner_round", "rot": 7.853981633974483, "tileType": 1, "tint": null}, "7,17": {"modelKey": "tile_straight", "rot": 15.707963267948966, "tileType": 1, "tint": null}, "5,18": {"modelKey": "tile_tree", "rot": 0, "tileType": 4, "tint": null}, "6,18": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "7,18": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "8,17": {"modelKey": "tile_straight", "rot": 15.707963267948966, "tileType": 1, "tint": null}, "8,18": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "6,1": {"modelKey": "tile_river_corner", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "7,1": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "8,1": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "1,3": {"modelKey": "tile_crystal", "rot": 0, "tileType": 5, "tint": null}, "1,4": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "14,4": {"modelKey": "tile_rock", "rot": 1.5707963267948966, "tileType": 5, "tint": null}, "15,4": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "15,3": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "14,3": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "16,3": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "16,2": {"modelKey": "tile_tree", "rot": 0, "tileType": 4, "tint": null}, "15,2": {"modelKey": "tile_spawn_round", "rot": 3.141592653589793, "tileType": 6, "tint": null}, "14,2": {"modelKey": "tile_straight", "rot": 0, "tileType": 1, "tint": null}, "13,3": {"modelKey": "tile_tree_double", "rot": 3.141592653589793, "tileType": 4, "tint": null}, "12,3": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "13,2": {"modelKey": "tile_straight", "rot": 0, "tileType": 1, "tint": null}, "13,1": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "15,1": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "14,1": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "13,4": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "12,4": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "11,3": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "12,2": {"modelKey": "tile_straight", "rot": 0, "tileType": 1, "tint": null}, "11,2": {"modelKey": "tile_straight", "rot": 0, "tileType": 1, "tint": null}, "16,4": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "17,2": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "17,3": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "16,1": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "15,0": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "14,0": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "13,0": {"modelKey": "tile_tree_quad", "rot": 0, "tileType": 4, "tint": null}, "12,0": {"modelKey": "wood_structure_high", "rot": 0, "tileType": 0, "tint": null}, "11,0": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "12,1": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "17,5": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "17,1": {"modelKey": "tile_crystal", "rot": 0, "tileType": 5, "tint": null}, "17,0": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "8,19": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "7,19": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "6,19": {"modelKey": "tile_rock", "rot": 1.5707963267948966, "tileType": 5, "tint": null}, "5,19": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "4,18": {"modelKey": "wood_structure_high", "rot": 0, "tileType": 0, "tint": null}, "2,16": {"modelKey": "tile_tree", "rot": 0, "tileType": 4, "tint": null}, "9,19": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "9,17": {"modelKey": "tile_straight_slope", "rot": 15.707963267948966, "tileType": 1, "tint": null}, "9,18": {"modelKey": "tile_tree_double", "rot": 0, "tileType": 4, "tint": null}, "10,19": {"modelKey": "tile_tree_quad", "rot": 0, "tileType": 4, "tint": null}, "7,16": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "6,15": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "6,14": {"modelKey": "tile_tree_quad", "rot": 0, "tileType": 4, "tint": null}, "1,14": {"modelKey": "tile_tree", "rot": 0, "tileType": 4, "tint": null}, "5,1": {"modelKey": "tile_river_corner", "rot": 4.71238898038469, "tileType": 2, "tint": null}, "4,1": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "8,0": {"modelKey": "wood_structure_high_part", "rot": 0, "tileType": 0, "tint": null}, "7,0": {"modelKey": "tile_tree_double", "rot": 1.5707963267948966, "tileType": 4, "tint": null}, "6,0": {"modelKey": "tile_rock", "rot": 0, "tileType": 5, "tint": null}, "9,1": {"modelKey": "tile", "rot": 0, "tileType": 0, "tint": null}, "5,0": {"modelKey": "tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "4,0": {"modelKey": "tile_tree_quad", "rot": 0, "tileType": 4, "tint": null}, "3,0": {"modelKey": "tile_slope", "rot": 12.566370614359172, "tileType": 1, "tint": null}, "10,2": {"modelKey": "tile_straight_slope", "rot": 12.566370614359172, "tileType": 1, "tint": null}, "9,2": {"modelKey": "tile_straight_slope", "rot": 9.42477796076938, "tileType": 1, "tint": null}, "8,2": {"modelKey": "tile_straight", "rot": 0, "tileType": 1, "tint": null}, "10,17": {"modelKey": "snow_tile_straight", "rot": 0, "tileType": 1, "tint": null}, "11,17": {"modelKey": "snow_tile_straight", "rot": 0, "tileType": 1, "tint": null}, "12,17": {"modelKey": "snow_tile_river_bridge", "rot": 1.5707963267948966, "tileType": 3, "tint": null}, "14,18": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "15,18": {"modelKey": "snow_tile_tree_double", "rot": 3.141592653589793, "tileType": 4, "tint": null}, "13,18": {"modelKey": "snow_tile_rock", "rot": 1.5707963267948966, "tileType": 5, "tint": null}, "12,18": {"modelKey": "snow_tile_river_straight", "rot": 1.5707963267948966, "tileType": 2, "tint": null}, "18,10": {"modelKey": "snow_tile_slope", "rot": 12.566370614359172, "tileType": 1, "tint": null}, "18,9": {"modelKey": "snow_tile_slope", "rot": 12.566370614359172, "tileType": 1, "tint": null}, "18,15": {"modelKey": "snow_tile_slope", "rot": 12.566370614359172, "tileType": 1, "tint": null}, "18,16": {"modelKey": "snow_tile_slope", "rot": 12.566370614359172, "tileType": 1, "tint": null}, "18,12": {"modelKey": "snow_tile_slope", "rot": 12.566370614359172, "tileType": 1, "tint": null}, "0,11": {"modelKey": "tile_slope", "rot": 3.141592653589793, "tileType": 1, "tint": null}, "0,7": {"modelKey": "tile_slope", "rot": 3.141592653589793, "tileType": 1, "tint": null}, "0,9": {"modelKey": "tile_slope", "rot": 9.42477796076938, "tileType": 1, "tint": null}, "0,10": {"modelKey": "tile_slope", "rot": 9.42477796076938, "tileType": 1, "tint": null}, "2,0": {"modelKey": "tower_square_build_b", "rot": 0, "tileType": 0, "tint": null}, "17,4": {"modelKey": "tile_tree_quad", "rot": 0, "tileType": 4, "tint": null}, "0,8": {"modelKey": "tile_river_straight", "rot": 3.141592653589793, "tileType": 2, "tint": null}, "1,6": {"modelKey": "wood_structure", "rot": 0, "tileType": 0, "tint": null}, "1,5": {"modelKey": "wood_structure_part", "rot": 3.141592653589793, "tileType": 0, "tint": null}, "6,10": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "6,12": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "6,13": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "7,14": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "7,15": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "8,16": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "9,3": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "9,4": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "9,5": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "9,6": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "9,7": {"modelKey": "wood_structure_part", "rot": 6.283185307179586, "tileType": 0, "tint": null}, "8,8": {"modelKey": "wood_structure_part", "rot": 7.853981633974483, "tileType": 0, "tint": null}, "7,9": {"modelKey": "wood_structure_high", "rot": 0, "tileType": 0, "tint": null}, "3,1": {"modelKey": "wood_structure_high", "rot": 0, "tileType": 0, "tint": null}, "16,0": {"modelKey": "wood_structure_part", "rot": 0, "tileType": 0, "tint": null}, "12,5": {"modelKey": "wood_structure_part", "rot": 1.5707963267948966, "tileType": 0, "tint": null}, "13,5": {"modelKey": "wood_structure_part", "rot": 1.5707963267948966, "tileType": 0, "tint": null}, "14,5": {"modelKey": "wood_structure_part", "rot": 1.5707963267948966, "tileType": 0, "tint": null}, "15,5": {"modelKey": "wood_structure_part", "rot": 1.5707963267948966, "tileType": 0, "tint": null}, "10,1": {"modelKey": "wood_structure_high_part", "rot": 0, "tileType": 0, "tint": null}, "1,13": {"modelKey": "tile_slope", "rot": 4.71238898038469, "tileType": 1, "tint": null}, "0,12": {"modelKey": "tile_slope", "rot": 1.5707963267948966, "tileType": 1, "tint": null}, "2,15": {"modelKey": "tile_slope", "rot": 0, "tileType": 1, "tint": null}, "1,15": {"modelKey": "tile_slope", "rot": 3.141592653589793, "tileType": 1, "tint": null}, "1,16": {"modelKey": "tile_slope", "rot": 6.283185307179586, "tileType": 1, "tint": null}, "2,17": {"modelKey": "tile_slope", "rot": 6.283185307179586, "tileType": 1, "tint": null}, "3,18": {"modelKey": "tile_slope", "rot": 6.283185307179586, "tileType": 1, "tint": null}, "9,14": {"modelKey": "snow_tile_slope", "rot": 3.141592653589793, "tileType": 1, "tint": null}, "10,15": {"modelKey": "snow_wood_structure", "rot": 0, "tileType": 0, "tint": null}, "9,15": {"modelKey": "snow_tile_tree_double", "rot": 3.141592653589793, "tileType": 4, "tint": null}, "11,8": {"modelKey": "snow_tile_tree_double", "rot": 3.141592653589793, "tileType": 4, "tint": null}, "0,0": {"modelKey": "snow_tile", "rot": 0, "tileType": 0, "tint": null}, "10,5": {"modelKey": "tile_tree", "rot": 0, "tileType": 4, "tint": null}, "8,14": {"modelKey": "wood_structure_part", "rot": 3.141592653589793, "tileType": 0, "tint": null}, "8,13": {"modelKey": "wood_structure_part", "rot": 3.141592653589793, "tileType": 0, "tint": null}, "8,12": {"modelKey": "wood_structure_part", "rot": 3.141592653589793, "tileType": 0, "tint": null}};
+const DEFAULT_FREE_OBJS = [{"modelKey": "tile_end_round", "tint": null, "pos": {"x": 9.4, "y": 4, "z": 11.4}, "rot": {"x": -0.05235987755982988, "y": 3.9269908169872414, "z": 0.05235987755982988}, "scale": 3}, {"modelKey": "tile_end_round", "tint": null, "pos": {"x": 9.4, "y": 4, "z": 11.4}, "rot": {"x": -0.05235987755982988, "y": 3.9269908169872414, "z": 0.05235987755982988}, "scale": 3}, {"modelKey": "tile_end_round", "tint": null, "pos": {"x": 10, "y": 0, "z": 13.3}, "rot": {"x": -0.05235987755982988, "y": 3.0892327760299634, "z": 0}, "scale": 1.95}, {"modelKey": "snow_wood_structure_high", "tint": null, "pos": {"x": 3, "y": 0.1, "z": 11.9}, "rot": {"x": -0.05235987755982988, "y": 3.0892327760299634, "z": 0}, "scale": 0.35}, {"modelKey": "tower_square_build_d", "tint": null, "pos": {"x": 0.1, "y": 0.3, "z": 2}, "rot": {"x": 0, "y": 2.705260340591211, "z": 0}, "scale": 2}, {"modelKey": "tower_square_build_a", "tint": null, "pos": {"x": 2.4, "y": 0, "z": 1.8}, "rot": {"x": 0, "y": 3.6477381366681487, "z": 0}, "scale": 3}, {"modelKey": "tower_round_build_a", "tint": null, "pos": {"x": 17.2, "y": 0, "z": 16.8}, "rot": {"x": 0, "y": 3.9269908169872414, "z": 0}, "scale": 3}, {"modelKey": "tower_round_build_d", "tint": null, "pos": {"x": 16.2, "y": 0, "z": 18}, "rot": {"x": 0, "y": 4.921828490624009, "z": 0}, "scale": 3}, {"modelKey": "tower_round_middle_c", "tint": null, "pos": {"x": 15.1, "y": 0, "z": 17.6}, "rot": {"x": 0, "y": 4.921828490624009, "z": 0}, "scale": 1.25}, {"modelKey": "snow_tile", "tint": null, "pos": {"x": 6.3, "y": 0, "z": 17.6}, "rot": {"x": 0, "y": 4.921828490624009, "z": 0}, "scale": 0.65}, {"modelKey": "snow_tile", "tint": null, "pos": {"x": 6.3, "y": 0, "z": 12.1}, "rot": {"x": 0, "y": 1.8675022996339325, "z": 0}, "scale": 0.65}, {"modelKey": "snow_tile", "tint": null, "pos": {"x": 19, "y": 0, "z": 12.9}, "rot": {"x": 0, "y": 1.8675022996339325, "z": 0}, "scale": 1.6}, {"modelKey": "tile", "tint": null, "pos": {"x": 4.5, "y": -0.1, "z": 9.8}, "rot": {"x": 0, "y": 1.8675022996339325, "z": 0}, "scale": 1.6}, {"modelKey": "tile_tree", "tint": null, "pos": {"x": 2.8, "y": 0.2, "z": 16.4}, "rot": {"x": 0, "y": 1.8675022996339325, "z": 0}, "scale": 0.4}, {"modelKey": "tile_tree", "tint": null, "pos": {"x": 18.6, "y": 0.1, "z": 7.5}, "rot": {"x": 0, "y": 1.2566370614359172, "z": 0}, "scale": 0.4}, {"modelKey": "snow_wood_structure", "tint": null, "pos": {"x": 12.5, "y": 0.1, "z": 16.4}, "rot": {"x": 0, "y": 1.2566370614359172, "z": 0}, "scale": 0.4}, {"modelKey": "snow_wood_structure", "tint": null, "pos": {"x": 11.4, "y": 0.1, "z": 15.6}, "rot": {"x": 0, "y": 2.199114857512855, "z": 0}, "scale": 0.2}, {"modelKey": "snow_tile_tree", "tint": null, "pos": {"x": 18, "y": -0.6, "z": 15.5}, "rot": {"x": 0, "y": 2.199114857512855, "z": 0}, "scale": 3}, {"modelKey": "tile_tree", "tint": null, "pos": {"x": 3.8, "y": -0.1, "z": -0.1}, "rot": {"x": 0, "y": 2.199114857512855, "z": 0}, "scale": 3}, {"modelKey": "tile_tree_quad", "tint": null, "pos": {"x": -0.3, "y": -0.2, "z": 10.4}, "rot": {"x": 0, "y": 2.199114857512855, "z": 0}, "scale": 3}];
+
+
+// Pre-computed path from start to end using BFS
+function computePath(grid) {
+  let start = null, end = null;
+  for (let r = 0; r < GRID_H; r++)
+    for (let c = 0; c < GRID_W; c++) {
+      if (grid[r][c] === TILE_START) start = [r,c];
+      if (grid[r][c] === TILE_END) end = [r,c];
+    }
+  if (!start || !end) return [];
+  const queue = [[...start, []]];
+  const visited = new Set();
+  const key = (r,c) => r+','+c;
+  visited.add(key(...start));
+  const walkable = [TILE_ROAD, TILE_BRIDGE, TILE_START, TILE_END];
+  while (queue.length) {
+    const [r,c,path] = queue.shift();
+    const newPath = [...path, [r,c]];
+    if (r === end[0] && c === end[1]) return newPath;
+    for (const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+      const nr = r+dr, nc = c+dc;
+      if (nr<0||nr>=GRID_H||nc<0||nc>=GRID_W) continue;
+      if (visited.has(key(nr,nc))) continue;
+      if (!walkable.includes(grid[nr][nc])) continue;
+      visited.add(key(nr,nc));
+      queue.push([nr, nc, newPath]);
+    }
+  }
+  return [];
+}
+
+// ============================================================
+// TOWER DEFINITIONS
+// ============================================================
+
+const TOWER_ICON_MAP = {
+  'cannon':    'assets/icons/ic_target_fill.png',
+  'sniper':    'assets/icons/ic_target_fill.png',
+  'machine_gun': 'assets/icons/ic_energy_fill.png',
+  'freeze':    'assets/icons/ic_magnet_fill.png',
+  'lightning': 'assets/icons/ic_energy_fill.png',
+  'ballista':  'assets/icons/ic_target_fill.png',
+  'catapult':  'assets/icons/ic_fuel_fill.png',
+};
+const ANIMAL_ICON_MAP = {
+  'default':   'assets/icons/ic_like_fill.png',
+};
+function getTowerIcon(id) { return TOWER_ICON_MAP[id] || 'assets/icons/ic_target_fill.png'; }
+
+const TOWER_DEFS = [
+  { id:'cannon', name:'Cannon', icon:'💣', cost:50, damage:40, range:2.5, attackSpeed:1, color:0x888888, modelKey:'weapon_cannon', desc:'Slow but powerful. Deals splash damage.' },
+  { id:'sniper', name:'Sniper', icon:'🎯', cost:120, damage:100, range:5, attackSpeed:0.5, color:0x4466aa, modelKey:'weapon_ballista', desc:'Long range, high damage single target.' },
+  { id:'machinegun', name:'Machine Gun', icon:'🔫', cost:180, damage:15, range:2, attackSpeed:4, color:0x44aa44, modelKey:'weapon_turret', desc:'Rapid fire, low damage per shot.' },
+  { id:'freeze', name:'Freeze', icon:'❄️', cost:100, damage:5, range:2.5, attackSpeed:1.5, color:0x44ccff, modelKey:'tower_round_build_a', desc:'Slows enemies significantly.' },
+  { id:'lightning', name:'Lightning', icon:'⚡', cost:250, damage:60, range:3, attackSpeed:1.5, color:0xffff00, modelKey:'tower_square_build_a', desc:'Chains to multiple enemies.' },
+];
+
+const UPGRADE_MULT = [
+  { damage:1.5, range:1.1, attackSpeed:1.2, cost:0.8 },
+  { damage:2.0, range:1.2, attackSpeed:1.4, cost:1.2 },
+  { damage:3.0, range:1.3, attackSpeed:1.6, cost:2.0 },
+];
+
+// ============================================================
+// ANIMAL DEFINITIONS
+// ============================================================
+const ANIMAL_DEFS = [
+  { id:'bee', name:'Bee', icon:'🐝', cost:80, damage:20, range:2, attackSpeed:3, modelKey:'animal_bee', special:'poison', desc:'Fast attacks with poison.' },
+  { id:'elephant', name:'Elephant', icon:'🐘', cost:200, damage:80, range:2, attackSpeed:0.7, modelKey:'animal_elephant', special:'stun', desc:'Huge damage, stuns enemies.' },
+  { id:'fox', name:'Fox', icon:'🦊', cost:90, damage:25, range:2.5, attackSpeed:2, modelKey:'animal_fox', special:'none', desc:'Balanced stats.' },
+  { id:'crab', name:'Crab', icon:'🦀', cost:110, damage:35, range:2, attackSpeed:1.5, modelKey:'animal_crab', special:'slow', desc:'Slows enemies.' },
+  { id:'panda', name:'Panda', icon:'🐼', cost:150, damage:50, range:2.5, attackSpeed:1, modelKey:'animal_panda', special:'none', desc:'Strong and durable.' },
+  { id:'penguin', name:'Penguin', icon:'🐧', cost:70, damage:15, range:3, attackSpeed:2.5, modelKey:'animal_penguin', special:'freeze', desc:'Freezes enemies briefly.' },
+  { id:'lion', name:'Lion', icon:'🦁', cost:180, damage:65, range:2.5, attackSpeed:1.2, modelKey:'animal_lion', special:'roar', desc:'Roar slows nearby enemies.' },
+  { id:'monkey', name:'Monkey', icon:'🐒', cost:95, damage:30, range:3, attackSpeed:2, modelKey:'animal_monkey', special:'none', desc:'Great range.' },
+];
+
+// ============================================================
+// ENEMY DEFINITIONS
+// ============================================================
+const ENEMY_DEFS = [
+  { id:'worker', name:'Worker', icon:'👷', hp:80, speed:1.5, reward:10, color:0xff8800, scale:0.4, modelKey:'enemy_ufo_a' },
+  { id:'runner', name:'Runner', icon:'🏃', hp:50, speed:3, reward:15, color:0xff4444, scale:0.35, modelKey:'enemy_ufo_b' },
+  { id:'fatguy', name:'Fat Guy', icon:'🐷', hp:200, speed:0.8, reward:20, color:0xffaaaa, scale:0.5, modelKey:'enemy_ufo_c' },
+  { id:'police', name:'Police', icon:'👮', hp:150, speed:1.8, reward:25, color:0x4444ff, scale:0.4, modelKey:'enemy_ufo_a' },
+  { id:'engineer', name:'Engineer', icon:'🔧', hp:120, speed:2, reward:30, color:0x44ff44, scale:0.4, modelKey:'enemy_ufo_b' },
+  { id:'boss', name:'BOSS', icon:'👹', hp:1000, speed:0.8, reward:100, color:0xff0000, scale:0.7, modelKey:'enemy_ufo_d' },
+];
+
+// ============================================================
+// WAVE DEFINITIONS
+// ============================================================
+function buildWave(waveNum) {
+  const enemies = [];
+  const isBossWave = waveNum % 5 === 0;
+  const count = 5 + waveNum * 3;
+  const hpMult = 1 + (waveNum - 1) * 0.3;
+  const spawnInterval = Math.max(0.3, 1.5 - waveNum * 0.05);
+  
+  if (isBossWave) {
+    enemies.push({ type:'boss', hpMult: hpMult * 2 });
+  }
+  
+  const types = ['worker','runner','fatguy','police','engineer'];
+  for (let i = 0; i < count; i++) {
+    const t = types[Math.floor(Math.random() * Math.min(waveNum, types.length))];
+    enemies.push({ type: t, hpMult });
+  }
+  
+  return { enemies, spawnInterval, num: waveNum };
+}
+
+const TOTAL_WAVES = 20;
+
+// ============================================================
+// GAME STATE
+// ============================================================
+let THREE_loaded = false;
+let assets = null;
+let renderer, scene, camera, raycaster;
+let _reflGroup = null;  // Клон карты — отражение
+let gameState = 'menu';
+let animFrameId = null;
+
+// Game data
+let grid = null;
+let path = [];
+let towers = [];
+let enemies = [];
+let projectiles = [];
+let particles = [];
+let gold = 300;
+let lives = 20;
+let wave = 0;
+let waveActive = false;
+let gameSpeed = 1;
+let selectedTowerType = null;
+let selectedTower = null;
+let tileObjects = []; // 3D tile mesh references
+let tileMeshGrid = []; // [r][c] -> Object3D
+let towerMeshes = {}; // tower id -> Object3D
+
+// Camera control
+let camTarget = new THREE.Vector3();
+let camAngle = Math.PI / 4;
+let camElevation = Math.PI / 4;
+let camDist = 18;
+let isDragging = false;
+let dragStart = { x:0, y:0 };
+let lastPinchDist = 0;
+
+// Wave spawning
+let spawnQueue = [];
+let spawnTimer = 0;
+let enemyId = 0;
+
+// ============================================================
+// INIT THREE.JS
+// ============================================================
+function initThree() {
+  const canvas = document.getElementById('canvas');
+  
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, stencil: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.LinearToneMapping;
+  renderer.toneMappingExposure = 1.0;
+  renderer.setClearColor(0x6baed6, 1); // fallback пока небо не загружено
+  
+  scene = new THREE.Scene();
+  // Небо загружается ниже через TextureLoader
+  scene.background = new THREE.Color(0x87ceeb); // временный голубой
+
+  // ══ НЕБО ══════════════════════════════════
+  // Equirectangular панорама. Облака в верхней четверти текстуры.
+  // Используем SphereGeometry как скайдом — даёт полный контроль над позицией.
+  // Это надёжнее чем texture.offset для scene.background.
+  const _skyLoader = new THREE.TextureLoader();
+  _skyLoader.load('assets/sky/sky_05_2k.png', (skyTex) => {
+    skyTex.mapping = THREE.EquirectangularReflectionMapping;
+    skyTex.wrapS = THREE.RepeatWrapping;
+    skyTex.wrapT = THREE.RepeatWrapping;
+    // offset.y = +0.30 → UV сдвигается вверх → мы видим нижнюю часть текстуры
+    // НО нам нужны облака (верх текстуры) → offset.y отрицательный
+    // -0.38 = сильно опускаем горизонт, облака заполняют верхние 2/3 экрана
+    skyTex.offset.set(0, -0.65);
+    scene.background = skyTex;
+    window._skyTex = skyTex;
+    renderer.setClearColor(0x87ceeb, 1);
+  });
+  // ═══════════════════════════════════════════
+
+
+  // Camera
+  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+  updateCamera();
+
+
+  
+  raycaster = new THREE.Raycaster();
+
+
+  
+  // Lighting — dark Kenney style: не пересвечивать
+  const ambLight = new THREE.AmbientLight(0xfff0e0, 0.47);
+  ambLight.userData.persistent = true;
+  scene.add(ambLight);
+
+  const dirLight = new THREE.DirectionalLight(0xffeedd, 1.1);
+  dirLight.position.set(-6, 20, 10);
+  dirLight.castShadow = true;
+  dirLight.shadow.mapSize.width = 4096;
+  dirLight.shadow.mapSize.height = 4096;
+  dirLight.shadow.camera.near = 0.1;
+  dirLight.shadow.camera.far = 100;
+  // Cover full 20x20 grid (each tile = 1 unit, so 20 units total)
+  dirLight.shadow.camera.left = -30;
+  dirLight.shadow.camera.right = 30;
+  dirLight.shadow.camera.top = 30;
+  dirLight.shadow.camera.bottom = -30;
+  dirLight.shadow.bias = -0.0005;
+  dirLight.shadow.normalBias = 0.02;
+  dirLight.userData.persistent = true;
+  scene.add(dirLight);
+
+  const fillLight = new THREE.DirectionalLight(0x8899cc, 0.35);
+  fillLight.position.set(10, 4, -8);
+  fillLight.userData.persistent = true;
+  scene.add(fillLight);
+
+  const hemiLight = new THREE.HemisphereLight(0xddeeff, 0x887755, 0.3);
+  hemiLight.userData.persistent = true;
+  scene.add(hemiLight);
+
+  // ── ОКЕАН: плоскость над отражением ──────────────────────────
+  new THREE.TextureLoader().load('assets/ocean/ocean.png', (oceanTex) => {
+    oceanTex.wrapS = oceanTex.wrapT = THREE.RepeatWrapping;
+    oceanTex.repeat.set(4, 4);
+    const oceanMat = new THREE.MeshBasicMaterial({
+      map: oceanTex,
+      transparent: true,
+      opacity: 0.55,
+      depthWrite: false,
+    });
+    const oceanMesh = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), oceanMat);
+    oceanMesh.rotation.x = -Math.PI / 2;
+    oceanMesh.position.set(
+      (GRID_W - 1) / 2 * TILE_SIZE,
+      -0.012, // совпадает с MIRROR_Y
+      (GRID_H - 1) / 2 * TILE_SIZE
+    );
+    oceanMesh.renderOrder = 10;
+    oceanMesh.userData.persistent = true;
+    scene.add(oceanMesh);
+    window._oceanMesh = oceanMesh;
+    window._oceanT = 0;
+  });
+  // ─────────────────────────────────────────────────────────────
+
+  window.addEventListener('resize', onResize);
+
+}
+
+function updateCamera() {
+  const x = camTarget.x + camDist * Math.sin(camElevation) * Math.sin(camAngle);
+  const y = camTarget.y + camDist * Math.cos(camElevation);
+  const z = camTarget.z + camDist * Math.sin(camElevation) * Math.cos(camAngle);
+  camera.position.set(x, y, z);
+  camera.lookAt(camTarget);
+}
+
+function onResize() {
+  if (!renderer) return;
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+
+}
+
+// ============================================================
+// BUILD MAP
+// ============================================================
+
+// PROVEN by vertex analysis of GLB files:
+// tile-straight rot=0 → N-S road (z-axis)
+// tile-straight rot=PI/2 → E-W road (x-axis)
+// tile-corner-round rot=0   → connects East(x+) + South(z+)
+// tile-corner-round rot=PI/2  → connects South(z+) + West(x-)   [90° CW]
+// tile-corner-round rot=PI    → connects West(x-)  + North(z-)   [180°]
+// tile-corner-round rot=-PI/2 → connects North(z-) + East(x+)   [90° CCW]
+function getRoadTileInfo(g, r, c) {
+  const W=[TILE_ROAD,TILE_BRIDGE,TILE_START,TILE_END];
+  const N=r>0&&W.includes(g[r-1][c]);
+  const S=r<GRID_H-1&&W.includes(g[r+1][c]);
+  const Ww=c>0&&W.includes(g[r][c-1]);
+  const E=c<GRID_W-1&&W.includes(g[r][c+1]);
+  const cnt=(N?1:0)+(S?1:0)+(Ww?1:0)+(E?1:0);
+
+  if((N||S)&&!(Ww||E)) return{model:'tile_straight',rot:0};
+  if((Ww||E)&&!(N||S)) return{model:'tile_straight',rot:Math.PI/2};
+
+  // Corners: rot=0→E+S, rot=PI/2→S+W, rot=PI→W+N, rot=-PI/2→N+E
+  if(E&&S&&!N&&!Ww) return{model:'tile_corner_round',rot:0};
+  if(S&&Ww&&!N&&!E) return{model:'tile_corner_round',rot:Math.PI/2};
+  if(Ww&&N&&!S&&!E) return{model:'tile_corner_round',rot:Math.PI};
+  if(N&&E&&!S&&!Ww) return{model:'tile_corner_round',rot:-Math.PI/2};
+
+  if(cnt>=3) return{model:'tile_crossing',rot:0};
+  return{model:'tile_straight',rot:0};
+}
+
+function scaleTo(obj,size) {
+  const box=new THREE.Box3().setFromObject(obj);
+  const sz=new THREE.Vector3(); box.getSize(sz);
+  const m=Math.max(sz.x,sz.z);
+  if(m>0.01){const s=size/m;obj.scale.set(s,s,s);}
+}
+
+// Rich decoration pool: trees, rocks, crystals, structures
+const DECO_POOL=[
+  {k:'detail_tree',w:6},{k:'detail_tree',w:6},{k:'detail_tree_large',w:4},
+  {k:'detail_rocks',w:3},{k:'detail_rocks_large',w:2},
+  {k:'detail_crystal',w:2},{k:'detail_crystal_large',w:1},
+  {k:'wood_structure_part',w:2},{k:'detail_dirt',w:3},
+];
+const TREE_POOL=['tile_tree','tile_tree','tile_tree_double','tile_tree_quad','tile_tree'];
+const GRASS_POOL=['tile','tile','tile','tile_bump','tile_bump','tile_dirt','tile_hill'];
+const ROCK_POOL=['tile_rock','tile_crystal','tile_rock'];
+
+// ALL non-persistent scene objects tracked here
+// Lights and floor are added once in initThree and NEVER removed
+let _sceneObjects = [];
+
+function addToScene(obj) {
+  scene.add(obj);
+  _sceneObjects.push(obj);
+}
+
+function clearScene() {
+  // Удаляем всё кроме объектов с userData.persistent = true
+  const toRemove = scene.children.filter(o => !o.userData.persistent);
+  toRemove.forEach(o => scene.remove(o));
+  // Отражение и оверлей
+  _reflGroup = null;
+  window._blueOverlay = null;
+  // НЕ трогаем scene.background — вызывающий код сам выставляет нужный фон
+  _sceneObjects = [];
+  tileObjects = [];
+  tileMeshGrid = Array.from({length:GRID_H},()=>Array(GRID_W).fill(null));
+  edHoverMesh = null;
+  rangeRingMesh = null;
+  hoverRangeRing = null;
+}
+
+function buildMap(g, customCellData) {
+  clearScene();
+  // Восстанавливаем небо (игровой режим)
+  if (window._skyTex) scene.background = window._skyTex;
+  else scene.background = new THREE.Color(0x87ceeb);
+
+  // If customCellData provided (editor map): only render explicitly placed tiles
+  // Otherwise render full DEFAULT_MAP with all grass/tree/rock tiles
+  const isEditorMap = !!customCellData;
+
+  for(let r=0;r<GRID_H;r++) for(let c=0;c<GRID_W;c++) {
+    const tt=g[r][c];
+    const cellKey = r+','+c;
+    
+    // For editor maps: skip pure GRASS cells that weren't explicitly placed
+    if(isEditorMap && tt===TILE_GRASS && !customCellData[cellKey]) continue;
+
+    let key,rot=0;
+
+    if(tt===TILE_START)     {key='tile_spawn_round';}
+    else if(tt===TILE_END)  {key='tile_end_round';}
+    else if(tt===TILE_ROAD) {
+      // Use custom model/rot if editor placed it, otherwise auto-detect
+      if(isEditorMap && customCellData[cellKey]) {
+        key=customCellData[cellKey].modelKey; rot=customCellData[cellKey].rot;
+      } else {
+        const i=getRoadTileInfo(g,r,c);key=i.model;rot=i.rot;
+      }
+    }
+    else if(tt===TILE_TREE) {
+      if(isEditorMap && customCellData[cellKey]) { key=customCellData[cellKey].modelKey; rot=customCellData[cellKey].rot; }
+      else { key=TREE_POOL[(r*13+c*7)%TREE_POOL.length];rot=((r*3+c*11)%4)*Math.PI/2; }
+    }
+    else if(tt===TILE_ROCK) {
+      if(isEditorMap && customCellData[cellKey]) { key=customCellData[cellKey].modelKey; rot=customCellData[cellKey].rot; }
+      else { key=ROCK_POOL[(r*5+c*9)%ROCK_POOL.length];rot=((r*7+c*3)%4)*Math.PI/2; }
+    }
+    else {
+      if(isEditorMap && customCellData[cellKey]) { key=customCellData[cellKey].modelKey; rot=customCellData[cellKey].rot; }
+      else { key=GRASS_POOL[(r*3+c*7)%GRASS_POOL.length];rot=((r*5+c*9)%4)*Math.PI/2; }
+    }
+
+    let obj=assets.clone(key);
+    if(!obj){
+      const clr={[TILE_GRASS]:0x7bc965,[TILE_ROAD]:0xd4a76a,[TILE_TREE]:0x4a8840,
+                 [TILE_ROCK]:0x9a9a8a,[TILE_START]:0xffdd44,[TILE_END]:0xff6644};
+      obj=new THREE.Mesh(new THREE.BoxGeometry(0.95,0.18,0.95),
+          new THREE.MeshLambertMaterial({color:clr[tt]||0x7bc965}));
+    }
+    scaleTo(obj,TILE_SIZE);
+    obj.rotation.y=rot;
+    obj.position.set(c*TILE_SIZE,0,r*TILE_SIZE);
+    obj.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true;}});
+    obj.userData={type:'tile',row:r,col:c,tileType:tt};
+    addToScene(obj); tileObjects.push(obj); tileMeshGrid[r][c]=obj;
+  }
+
+  // === RICH DECORATIONS on open grass tiles (only for default maps, not editor) ===
+  if(!isEditorMap) {
+  const decoTotal=DECO_POOL.reduce((a,d)=>a+d.w,0);
+  function pickDeco(h){
+    let v=h%decoTotal,acc=0;
+    for(const d of DECO_POOL){acc+=d.w;if(v<acc)return d.k;}
+    return DECO_POOL[0].k;
+  }
+
+  for(let r=0;r<GRID_H;r++) for(let c=0;c<GRID_W;c++) {
+    if(g[r][c]!==TILE_GRASS) continue;
+    const adjRoad=[[-1,0],[1,0],[0,-1],[0,1]].some(([dr,dc])=>{
+      const nr=r+dr,nc=c+dc;
+      return nr>=0&&nr<GRID_H&&nc>=0&&nc<GRID_W&&[TILE_ROAD,TILE_START,TILE_END].includes(g[nr][nc]);
+    });
+    if(adjRoad) continue;
+    const h=(r*41+c*23+r*c*7)%30;
+    if(h>=13) continue;
+    const mk=pickDeco(h);
+    const det=assets.clone(mk);
+    if(!det) continue;
+    scaleTo(det,TILE_SIZE*(0.5+((h%5)*0.08)));
+    det.rotation.y=(h*1.31);
+    const ox=((h%7)-3)*0.06,oz=((h%5)-2)*0.06;
+    det.position.set(c*TILE_SIZE+ox,0,r*TILE_SIZE+oz);
+    det.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true;}});
+    addToScene(det); tileObjects.push(det);
+  }
+  } // end !isEditorMap
+
+  camTarget.set((GRID_W-1)/2*TILE_SIZE,0,(GRID_H-1)/2*TILE_SIZE);
+  updateCamera();
+}
+
+// ============================================================
+// MAP EDITOR
+// ============================================================
+let editorGrid = null;
+let editorActive = false;
+let edSelectedTile = { type: TILE_ROAD, modelKey: 'tile_straight', label: '🛤 Road', rot: 0 };
+let edSelectedCell = null; // { r, c }
+
+// === FREE PLACE MODE ===
+// Allows placing objects anywhere with full 3D transform (not grid-locked)
+let edFreePlaceMode = false;
+let edEraseMode = false; // Режим ластика
+let edFreeObjects = []; // { mesh, modelKey, pos:{x,y,z}, rot:{x,y,z}, scale }
+let edSelectedFreeObj = null;
+let edGizmo = null; // THREE.Group with arrows/rings
+let edGizmoMode = 'translate'; // 'translate' | 'rotate' | 'scale'
+let edGizmoDragging = null; // { axis, startMouse, startVal }
+let edGizmoArrows = []; // raycaster targets
+
+const ED_PALETTE = [
+  // === ДОРОГИ ===
+  { type:TILE_ROAD, modelKey:'tile_straight',          label:'Дорога',     icon:'🛤', cat:'🛤 Дороги' },
+  { type:TILE_ROAD, modelKey:'tile_corner_round',      label:'Поворот',    icon:'↩', cat:'🛤 Дороги' },
+  { type:TILE_ROAD, modelKey:'tile_corner_square',     label:'Угол',       icon:'⌐', cat:'🛤 Дороги' },
+  { type:TILE_ROAD, modelKey:'tile_corner_inner',      label:'Внутр.',     icon:'⌐', cat:'🛤 Дороги' },
+  { type:TILE_ROAD, modelKey:'tile_crossing',          label:'Крест',      icon:'✛', cat:'🛤 Дороги' },
+  { type:TILE_ROAD, modelKey:'tile_split',             label:'Развилка',   icon:'⊢', cat:'🛤 Дороги' },
+  { type:TILE_ROAD, modelKey:'tile_wide_straight',     label:'Широкая',    icon:'🛣', cat:'🛤 Дороги' },
+  { type:TILE_ROAD, modelKey:'tile_wide_corner',       label:'Ш.Поворот',  icon:'↩', cat:'🛤 Дороги' },
+  { type:TILE_ROAD, modelKey:'tile_wide_split',        label:'Ш.Развилка', icon:'⊢', cat:'🛤 Дороги' },
+  { type:TILE_ROAD, modelKey:'tile_transition',        label:'Переход',    icon:'→', cat:'🛤 Дороги' },
+  { type:TILE_ROAD, modelKey:'tile_wide_transition',   label:'Ш.Переход',  icon:'⇒', cat:'🛤 Дороги' },
+  { type:TILE_ROAD, modelKey:'tile_slope',             label:'Склон',      icon:'📐', cat:'🛤 Дороги' },
+  { type:TILE_ROAD, modelKey:'tile_straight_slope',    label:'Подъём',     icon:'⛰', cat:'🛤 Дороги' },
+  { type:TILE_ROAD, modelKey:'tile_straight_slope_large', label:'Б.Подъём',icon:'🏔', cat:'🛤 Дороги' },
+  { type:TILE_ROAD, modelKey:'tile_bump',              label:'Кочка',      icon:'〰', cat:'🛤 Дороги' },
+  { type:TILE_ROAD, modelKey:'tile_hill',              label:'Холм',       icon:'🏕', cat:'🛤 Дороги' },
+  // === СПЕЦИАЛЬНЫЕ ===
+  { type:TILE_START, modelKey:'tile_spawn_round',      label:'Старт',      icon:'🟢', cat:'⭐ Старт/Финиш' },
+  { type:TILE_START, modelKey:'tile_spawn',            label:'Спавн',      icon:'🔵', cat:'⭐ Старт/Финиш' },
+  { type:TILE_END,   modelKey:'tile_end_round',        label:'Финиш',      icon:'🔴', cat:'⭐ Старт/Финиш' },
+  { type:TILE_END,   modelKey:'tile_end',              label:'База',       icon:'🏁', cat:'⭐ Старт/Финиш' },
+  { type:TILE_END,   modelKey:'tile_spawn_end_round',  label:'С+Ф',        icon:'🔄', cat:'⭐ Старт/Финиш' },
+  // === ПРИРОДА ===
+  { type:TILE_GRASS, modelKey:'tile',                  label:'Трава',      icon:'🟩', cat:'🌿 Природа' },
+  { type:TILE_GRASS, modelKey:'tile_dirt',             label:'Земля',      icon:'🟫', cat:'🌿 Природа' },
+  { type:TILE_TREE,  modelKey:'tile_tree',             label:'Дерево',     icon:'🌲', cat:'🌿 Природа' },
+  { type:TILE_TREE,  modelKey:'tile_tree_double',      label:'2 Дерева',   icon:'🌳', cat:'🌿 Природа' },
+  { type:TILE_TREE,  modelKey:'tile_tree_quad',        label:'Лес',        icon:'🌴', cat:'🌿 Природа' },
+  { type:TILE_ROCK,  modelKey:'tile_rock',             label:'Камень',     icon:'🪨', cat:'🌿 Природа' },
+  { type:TILE_ROCK,  modelKey:'tile_crystal',          label:'Кристалл',   icon:'💎', cat:'🌿 Природа' },
+  // === СНЕЖНЫЙ БИОМ ===
+  { type:TILE_GRASS, modelKey:'snow_tile',             label:'Снег',       icon:'🏔', cat:'❄️ Снег' },
+  { type:TILE_ROAD,  modelKey:'snow_tile_straight',    label:'С.Дорога',   icon:'❄', cat:'❄️ Снег' },
+  { type:TILE_ROAD,  modelKey:'snow_tile_corner_round',label:'С.Поворот',  icon:'↩', cat:'❄️ Снег' },
+  { type:TILE_ROAD,  modelKey:'snow_tile_crossing',    label:'С.Крест',    icon:'✛', cat:'❄️ Снег' },
+  { type:TILE_ROAD,  modelKey:'snow_tile_wide_straight',label:'С.Широк.',  icon:'🛣', cat:'❄️ Снег' },
+  { type:TILE_ROAD,  modelKey:'snow_tile_split',       label:'С.Развилка', icon:'⊢', cat:'❄️ Снег' },
+  { type:TILE_ROAD,  modelKey:'snow_tile_slope',       label:'С.Склон',    icon:'📐', cat:'❄️ Снег' },
+  { type:TILE_ROAD,  modelKey:'snow_tile_hill',        label:'С.Холм',     icon:'⛷', cat:'❄️ Снег' },
+  { type:TILE_ROAD,  modelKey:'snow_tile_bump',        label:'С.Кочка',    icon:'〰', cat:'❄️ Снег' },
+  { type:TILE_TREE,  modelKey:'snow_tile_tree',        label:'С.Дерево',   icon:'🎄', cat:'❄️ Снег' },
+  { type:TILE_TREE,  modelKey:'snow_tile_tree_double', label:'С.2 Дер.',   icon:'🎄', cat:'❄️ Снег' },
+  { type:TILE_ROCK,  modelKey:'snow_tile_rock',        label:'С.Камень',   icon:'🪨', cat:'❄️ Снег' },
+  { type:TILE_ROCK,  modelKey:'snow_tile_crystal',     label:'С.Кристалл', icon:'💠', cat:'❄️ Снег' },
+  { type:TILE_GRASS, modelKey:'snow_tile_dirt',        label:'С.Земля',    icon:'🏔', cat:'❄️ Снег' },
+  { type:TILE_START, modelKey:'snow_tile_spawn_round', label:'С.Старт',    icon:'🔵', cat:'❄️ Снег' },
+  { type:TILE_END,   modelKey:'snow_tile_end_round',   label:'С.Финиш',    icon:'🔴', cat:'❄️ Снег' },
+  // === ВОДА ===
+  { type:TILE_WATER,  modelKey:'tile_river_straight',  label:'Река',       icon:'🌊', cat:'💧 Вода' },
+  { type:TILE_WATER,  modelKey:'tile_river_corner',    label:'Р.Поворот',  icon:'〰', cat:'💧 Вода' },
+  { type:TILE_WATER,  modelKey:'tile_river_transition',label:'Р.Переход',  icon:'💧', cat:'💧 Вода' },
+  { type:TILE_WATER,  modelKey:'tile_river_slope',     label:'Р.Склон',    icon:'📐', cat:'💧 Вода' },
+  { type:TILE_WATER,  modelKey:'tile_river_slope_large',label:'Р.Б.Склон', icon:'⛰', cat:'💧 Вода' },
+  { type:TILE_WATER,  modelKey:'tile_river_waterfall', label:'Водопад',    icon:'🌊', cat:'💧 Вода' },
+  { type:TILE_BRIDGE, modelKey:'tile_river_bridge',    label:'Мост',       icon:'🌉', cat:'💧 Вода' },
+  { type:TILE_WATER,  modelKey:'snow_tile_river_straight',label:'С.Река',  icon:'❄', cat:'💧 Вода' },
+  { type:TILE_BRIDGE, modelKey:'snow_tile_river_bridge', label:'С.Мост',   icon:'🌉', cat:'💧 Вода' },
+  // === ПОСТРОЙКИ (ДЕКОР) ===
+  { type:TILE_GRASS, modelKey:'wood_structure',        label:'Забор',      icon:'🏚', cat:'🏗 Декор' },
+  { type:TILE_GRASS, modelKey:'wood_structure_part',   label:'Часть забора',icon:'📦',cat:'🏗 Декор' },
+  { type:TILE_GRASS, modelKey:'wood_structure_high',   label:'Высокий',    icon:'🗼', cat:'🏗 Декор' },
+  { type:TILE_GRASS, modelKey:'wood_structure_high_part',label:'Вые.Ч.',   icon:'🔩', cat:'🏗 Декор' },
+  { type:TILE_GRASS, modelKey:'snow_wood_structure',   label:'С.Забор',    icon:'🏔', cat:'🏗 Декор' },
+  { type:TILE_GRASS, modelKey:'snow_wood_structure_high',label:'С.Высокий',icon:'🗼', cat:'🏗 Декор' },
+  // === БАШНИ КРУГЛЫЕ ===
+  { type:TILE_GRASS, modelKey:'tower_round_build_a',   label:'Крнд.A',     icon:'🏰', cat:'🗼 Башни' },
+  { type:TILE_GRASS, modelKey:'tower_round_build_b',   label:'Крнд.B',     icon:'🏰', cat:'🗼 Башни' },
+  { type:TILE_GRASS, modelKey:'tower_round_build_c',   label:'Крнд.C',     icon:'🏰', cat:'🗼 Башни' },
+  { type:TILE_GRASS, modelKey:'tower_round_build_d',   label:'Крнд.D',     icon:'🏰', cat:'🗼 Башни' },
+  { type:TILE_GRASS, modelKey:'tower_round_build_e',   label:'Крнд.E',     icon:'🏰', cat:'🗼 Башни' },
+  { type:TILE_GRASS, modelKey:'tower_round_build_f',   label:'Крнд.F',     icon:'🏰', cat:'🗼 Башни' },
+  { type:TILE_GRASS, modelKey:'tower_round_bottom_a',  label:'Осн.A',      icon:'🏯', cat:'🗼 Башни' },
+  { type:TILE_GRASS, modelKey:'tower_round_bottom_b',  label:'Осн.B',      icon:'🏯', cat:'🗼 Башни' },
+  { type:TILE_GRASS, modelKey:'tower_round_bottom_c',  label:'Осн.C',      icon:'🏯', cat:'🗼 Башни' },
+  { type:TILE_GRASS, modelKey:'tower_round_middle_a',  label:'Ср.A',       icon:'🏗', cat:'🗼 Башни' },
+  { type:TILE_GRASS, modelKey:'tower_round_middle_b',  label:'Ср.B',       icon:'🏗', cat:'🗼 Башни' },
+  { type:TILE_GRASS, modelKey:'tower_round_middle_c',  label:'Ср.C',       icon:'🏗', cat:'🗼 Башни' },
+  { type:TILE_GRASS, modelKey:'tower_round_top_a',     label:'Верх.A',     icon:'🔭', cat:'🗼 Башни' },
+  { type:TILE_GRASS, modelKey:'tower_round_top_b',     label:'Верх.B',     icon:'🔭', cat:'🗼 Башни' },
+  { type:TILE_GRASS, modelKey:'tower_round_top_c',     label:'Верх.C',     icon:'🔭', cat:'🗼 Башни' },
+  { type:TILE_GRASS, modelKey:'tower_round_roof_a',    label:'Кр.A',       icon:'⛩', cat:'🗼 Башни' },
+  { type:TILE_GRASS, modelKey:'tower_round_roof_b',    label:'Кр.B',       icon:'⛩', cat:'🗼 Башни' },
+  { type:TILE_GRASS, modelKey:'tower_round_roof_c',    label:'Кр.C',       icon:'⛩', cat:'🗼 Башни' },
+  { type:TILE_GRASS, modelKey:'tower_round_base',      label:'База',       icon:'⭕', cat:'🗼 Башни' },
+  { type:TILE_GRASS, modelKey:'tower_round_crystals',  label:'Крист.',     icon:'💠', cat:'🗼 Башни' },
+  // === ПУСТЫННЫЙ БИОМ (рыжий) ===
+  { type:TILE_GRASS, modelKey:'tile_dirt',              label:'Пустыня',    icon:'🏜', cat:'🏜 Пустыня' },
+  { type:TILE_ROAD,  modelKey:'tile_straight',          label:'П.Дорога',   icon:'🛤', cat:'🏜 Пустыня' },
+  { type:TILE_ROAD,  modelKey:'tile_corner_round',      label:'П.Поворот',  icon:'↩', cat:'🏜 Пустыня' },
+  { type:TILE_ROAD,  modelKey:'tile_crossing',          label:'П.Крест',    icon:'✛', cat:'🏜 Пустыня' },
+  { type:TILE_ROAD,  modelKey:'tile_wide_straight',     label:'П.Широк.',   icon:'🛣', cat:'🏜 Пустыня' },
+  { type:TILE_ROAD,  modelKey:'tile_slope',             label:'П.Склон',    icon:'📐', cat:'🏜 Пустыня' },
+  { type:TILE_ROAD,  modelKey:'tile_hill',              label:'П.Холм',     icon:'⛰', cat:'🏜 Пустыня' },
+  { type:TILE_ROCK,  modelKey:'tile_rock',              label:'П.Камень',   icon:'🪨', cat:'🏜 Пустыня' },
+  { type:TILE_ROCK,  modelKey:'tile_crystal',           label:'П.Кристалл', icon:'🔶', cat:'🏜 Пустыня' },
+  { type:TILE_GRASS, modelKey:'tile_transition',        label:'П.Переход',  icon:'↔', cat:'🏜 Пустыня' },
+  // Детали пустыни
+  { type:TILE_GRASS, modelKey:'detail_dirt',            label:'Дет.Песок',  icon:'🟤', cat:'🏜 Пустыня' },
+  { type:TILE_GRASS, modelKey:'detail_dirt_large',      label:'Б.Песок',    icon:'🟤', cat:'🏜 Пустыня' },
+  { type:TILE_GRASS, modelKey:'detail_rocks',           label:'Гравий',     icon:'🪨', cat:'🏜 Пустыня' },
+  { type:TILE_GRASS, modelKey:'detail_rocks_large',     label:'Б.Гравий',   icon:'🪨', cat:'🏜 Пустыня' },
+  { type:TILE_GRASS, modelKey:'tower_square_build_a',  label:'Кв.A',       icon:'🏰', cat:'🏰 Кв.Башни' },
+  { type:TILE_GRASS, modelKey:'tower_square_build_b',  label:'Кв.B',       icon:'🏰', cat:'🏰 Кв.Башни' },
+  { type:TILE_GRASS, modelKey:'tower_square_build_c',  label:'Кв.C',       icon:'🏰', cat:'🏰 Кв.Башни' },
+  { type:TILE_GRASS, modelKey:'tower_square_build_d',  label:'Кв.D',       icon:'🏰', cat:'🏰 Кв.Башни' },
+  { type:TILE_GRASS, modelKey:'tower_square_build_e',  label:'Кв.E',       icon:'🏰', cat:'🏰 Кв.Башни' },
+  { type:TILE_GRASS, modelKey:'tower_square_build_f',  label:'Кв.F',       icon:'🏰', cat:'🏰 Кв.Башни' },
+  { type:TILE_GRASS, modelKey:'tower_square_bottom_a', label:'Кв.Осн.A',   icon:'🏯', cat:'🏰 Кв.Башни' },
+  { type:TILE_GRASS, modelKey:'tower_square_bottom_b', label:'Кв.Осн.B',   icon:'🏯', cat:'🏰 Кв.Башни' },
+  { type:TILE_GRASS, modelKey:'tower_square_bottom_c', label:'Кв.Осн.C',   icon:'🏯', cat:'🏰 Кв.Башни' },
+  { type:TILE_GRASS, modelKey:'tower_square_middle_a', label:'Кв.Ср.A',    icon:'🏗', cat:'🏰 Кв.Башни' },
+  { type:TILE_GRASS, modelKey:'tower_square_middle_b', label:'Кв.Ср.B',    icon:'🏗', cat:'🏰 Кв.Башни' },
+  { type:TILE_GRASS, modelKey:'tower_square_middle_c', label:'Кв.Ср.C',    icon:'🏗', cat:'🏰 Кв.Башни' },
+  { type:TILE_GRASS, modelKey:'tower_square_top_a',    label:'Кв.Верх.A',  icon:'🔭', cat:'🏰 Кв.Башни' },
+  { type:TILE_GRASS, modelKey:'tower_square_top_b',    label:'Кв.Верх.B',  icon:'🔭', cat:'🏰 Кв.Башни' },
+  { type:TILE_GRASS, modelKey:'tower_square_top_c',    label:'Кв.Верх.C',  icon:'🔭', cat:'🏰 Кв.Башни' },
+  { type:TILE_GRASS, modelKey:'tower_square_roof_a',   label:'Кв.Кр.A',    icon:'⛩', cat:'🏰 Кв.Башни' },
+  { type:TILE_GRASS, modelKey:'tower_square_roof_b',   label:'Кв.Кр.B',    icon:'⛩', cat:'🏰 Кв.Башни' },
+  { type:TILE_GRASS, modelKey:'tower_square_roof_c',   label:'Кв.Кр.C',    icon:'⛩', cat:'🏰 Кв.Башни' },
+];
+
+// Per-cell custom model + rotation overrides for editor
+let edCellData = {}; // key "r,c" -> { modelKey, rot, tileType }
+
+function edKey(r,c){ return r+','+c; }
+
+function buildEditorPalette() {
+  const pal = document.getElementById('ed-palette');
+  pal.innerHTML = '';
+  let lastCat = '';
+  ED_PALETTE.forEach((item,i) => {
+    if(item.cat !== lastCat) {
+      const hdr = document.createElement('div');
+      hdr.style.cssText='color:#f5a623;font-size:0.55rem;font-weight:700;text-align:center;padding:4px 0 2px;letter-spacing:0.08em;';
+      hdr.textContent = item.cat.toUpperCase();
+      pal.appendChild(hdr);
+      lastCat = item.cat;
+    }
+    const btn = document.createElement('div');
+    btn.className='ed-tile-btn';
+    const thumb = getThumb(item.modelKey);
+    btn.innerHTML = thumb
+      ? `<div class="ed-tile-icon"><img src="${thumb}" style="width:32px;height:32px;object-fit:contain;"></div><div class="ed-tile-label">${item.label}</div>`
+      : `<div class="ed-tile-icon"><img src="assets/icons/ic_map.png" style="width:22px;height:22px;filter:none;opacity:.7;"></div><div class="ed-tile-label">${item.label}</div>`;
+    btn.addEventListener('click',()=>{
+      edSelectedTile={...item,rot:0};
+      edSelectedCell=null;
+      document.querySelectorAll('#ed-palette .ed-tile-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      document.getElementById('ed-info').textContent=`✦ ${item.label} — tap map to place  |  ↺ ↻ rotate`;
+    });
+    
+    btn.dataset.ed=i;
+    if(i===0){btn.classList.add('active');}
+    pal.appendChild(btn);
+  });
+}
+
+function openEditor() {
+  editorActive = true;
+  edCellData = {};
+  editorGrid = Array.from({length:GRID_H}, ()=>Array(GRID_W).fill(TILE_GRASS));
+  document.getElementById('editor-screen').style.display='flex';
+  document.getElementById('main-menu').classList.add('hidden');
+  buildEditorPalette();
+  if(!scene) { initThree(); }
+
+  // Прячем отражение
+  if (_reflGroup) _reflGroup.visible = false;
+  if (window._blueOverlay) window._blueOverlay.visible = false;
+
+  // Шахматный пол (создаём один раз)
+  if (!window._editorFloor) {
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 128;
+    const cx = cv.getContext('2d');
+    const c1 = '#4a4a4c', c2 = '#3a3a3c';
+    for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+      cx.fillStyle = (x + y) % 2 === 0 ? c1 : c2;
+      cx.fillRect(x*16, y*16, 16, 16);
+    }
+    const tex = new THREE.CanvasTexture(cv);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(40, 40);
+    const mat = new THREE.MeshBasicMaterial({ map: tex });
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), mat);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set((GRID_W-1)/2*TILE_SIZE, -0.01, (GRID_H-1)/2*TILE_SIZE);
+    mesh.userData.persistent = true;
+    scene.add(mesh);
+    window._editorFloor = mesh;
+  }
+
+  buildEditorEmptyMap();
+  gameState = 'editor';
+}
+
+function buildEditorEmptyMap() {
+  clearScene();
+  // Серый фон для редактора (после clearScene который его не трогает)
+  scene.background = new THREE.Color(0x39393b);
+  renderer.setClearColor(0x39393b, 1);
+  // Показываем шахматный пол, прячем игровые объекты
+  if (window._editorFloor) window._editorFloor.visible = true;
+  if (window._oceanMesh)   window._oceanMesh.visible   = false;
+
+  // Grid lines so user can see the cells
+  const lineMat=new THREE.LineBasicMaterial({color:0x555555,transparent:true,opacity:0.8});
+  for(let i=0;i<=GRID_W;i++){
+    const pts=[new THREE.Vector3(i*TILE_SIZE-0.5,0.02,-0.5),
+               new THREE.Vector3(i*TILE_SIZE-0.5,0.02,GRID_H*TILE_SIZE-0.5)];
+    const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lineMat);
+    addToScene(line); tileObjects.push(line);
+  }
+  for(let i=0;i<=GRID_H;i++){
+    const pts=[new THREE.Vector3(-0.5,0.02,i*TILE_SIZE-0.5),
+               new THREE.Vector3(GRID_W*TILE_SIZE-0.5,0.02,i*TILE_SIZE-0.5)];
+    const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),lineMat);
+    addToScene(line); tileObjects.push(line);
+  }
+
+  // Place a single spawn tile in center as starting reference
+  const cr=Math.floor(GRID_H/2), cc=Math.floor(GRID_W/2);
+  editorGrid[cr][cc]=TILE_START;
+  edCellData[edKey(cr,cc)]={modelKey:'tile_spawn_round',rot:0,tileType:TILE_START};
+  rebuildEditorCell(cr,cc);
+
+  camTarget.set((GRID_W-1)/2*TILE_SIZE,0,(GRID_H-1)/2*TILE_SIZE);
+  camDist=22; camElevation=Math.PI/3.5;
+  updateCamera();
+}
+
+function closeEditor() {
+  editorActive = false;
+  gameState = 'menu';
+  if(edHoverMesh) { edHoverMesh.visible=false; }
+
+  // ── Восстанавливаем небо/океан при выходе из редактора ──
+  if (window._skyTex) {
+    scene.background = window._skyTex;
+  } else {
+    scene.background = new THREE.Color(0x87ceeb);
+  }
+  renderer.setClearColor(0x87ceeb, 1);
+  if (window._oceanMesh)   window._oceanMesh.visible   = true;
+  if (window._blueOverlay) window._blueOverlay.visible  = true;
+  if (_reflGroup)          _reflGroup.visible           = true;
+  if (window._editorFloor) window._editorFloor.visible  = false;
+
+  document.getElementById('editor-screen').style.display='none';
+  document.getElementById('main-menu').classList.remove('hidden');
+}
+
+function editorPlaceTile(r, c) {
+  if(r<0||r>=GRID_H||c<0||c>=GRID_W) return;
+  const sel = edSelectedTile;
+  editorGrid[r][c] = sel.type;
+  edCellData[edKey(r,c)] = { modelKey: sel.modelKey, rot: sel.rot, tileType: sel.type };
+  rebuildEditorCell(r, c);
+  edSelectedCell = { r, c };
+}
+
+function rebuildEditorCell(r, c) {
+  // Remove old tile object
+  const old = tileMeshGrid[r][c];
+  if(old) { scene.remove(old); tileObjects = tileObjects.filter(o=>o!==old); }
+
+  const data = edCellData[edKey(r,c)];
+  const tt = editorGrid[r][c];
+  let key, rot;
+  if(data) { key=data.modelKey; rot=data.rot; }
+  else {
+    const info = tt===TILE_ROAD ? getRoadTileInfo(editorGrid,r,c) : {model:'tile',rot:0};
+    key=info.model; rot=info.rot;
+  }
+
+  let obj = assets.clone(key);
+  if(!obj) {
+    obj=new THREE.Mesh(new THREE.BoxGeometry(0.95,0.18,0.95),
+      new THREE.MeshLambertMaterial({color:0x888888}));
+  }
+  scaleTo(obj, TILE_SIZE);
+  obj.rotation.y = rot;
+  obj.position.set(c*TILE_SIZE, 0, r*TILE_SIZE);
+  obj.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true;}});
+  obj.userData={type:'tile',row:r,col:c,tileType:tt};
+  // Highlight selected cell
+  if(edSelectedCell && edSelectedCell.r===r && edSelectedCell.c===c) {
+    obj.traverse(m=>{if(m.isMesh&&m.material){
+      m.material = m.material.clone();
+      m.material.emissive = new THREE.Color(0x225522);
+    }});
+  }
+  addToScene(obj); tileObjects.push(obj); tileMeshGrid[r][c]=obj;
+}
+
+function edRotateSelected(dir) {
+  // dir: +1 = CW, -1 = CCW
+  edSelectedTile.rot = (edSelectedTile.rot + dir*Math.PI/2);
+  if(edSelectedCell) {
+    const {r,c}=edSelectedCell;
+    if(!edCellData[edKey(r,c)]) edCellData[edKey(r,c)]={modelKey:edSelectedTile.modelKey,rot:0,tileType:edSelectedTile.type};
+    edCellData[edKey(r,c)].rot = edSelectedTile.rot;
+    rebuildEditorCell(r,c);
+  }
+  document.getElementById('ed-info').textContent=`Rotation: ${Math.round(edSelectedTile.rot*180/Math.PI)}°`;
+}
+
+function saveEditorMap() {
+  // Validate: must have start and end
+  let hasStart = false, hasEnd = false;
+  for(let r=0;r<GRID_H;r++) for(let c=0;c<GRID_W;c++) {
+    if(editorGrid[r][c]===TILE_START) hasStart=true;
+    if(editorGrid[r][c]===TILE_END) hasEnd=true;
+  }
+  if(!hasStart || !hasEnd) {
+    document.getElementById('ed-info').textContent = '⚠ Map needs a Start tile (🟢) and End tile (🔴) to save!';
+    return;
+  }
+  // Check path exists
+  const testPath = computePath(editorGrid);
+  if(testPath.length < 2) {
+    document.getElementById('ed-info').textContent = '⚠ No valid path from Start to End! Connect them with Road tiles.';
+    return;
+  }
+
+  const name = prompt('Enter map name:', 'My Map ' + (Date.now()%1000));
+  if(!name) return;
+
+  const saved = JSON.parse(localStorage.getItem('td_saved_maps') || '[]');
+  saved.push({
+    name,
+    grid: editorGrid.map(r=>[...r]),
+    cellData: {...edCellData},
+    date: new Date().toLocaleDateString()
+  });
+  localStorage.setItem('td_saved_maps', JSON.stringify(saved));
+  document.getElementById('ed-info').textContent = `✅ Map "${name}" saved! (${saved.length} maps total)`;
+}
+
+// ============================================================
+// GIZMO — 3D манипулятор
+// ============================================================
+
+function createGizmo() {
+  if(edGizmo) { scene.remove(edGizmo); edGizmo=null; edGizmoArrows=[]; }
+  const g = new THREE.Group();
+
+  // Стрелки перемещения — делаем их БОЛЬШИМИ для удобного нажатия
+  const mkTranslateArrow = (color, axis) => {
+    const mat = new THREE.MeshBasicMaterial({ color, depthTest:false });
+    // Увеличенный shaft для удобного тапа на телефоне
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 1.2, 8), mat.clone());
+    const head = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.4, 8), mat.clone());
+    head.position.y = 0.8;
+    const grp = new THREE.Group();
+    grp.add(shaft); grp.add(head);
+    // Невидимый большой хитбокс для удобного тапа
+    const hitbox = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.25, 0.25, 1.6, 8),
+      new THREE.MeshBasicMaterial({ visible:false, depthTest:false })
+    );
+    hitbox.position.y = 0.3;
+    grp.add(hitbox);
+
+    if(axis==='x') { grp.rotation.z = -Math.PI/2; grp.position.set(0.8,0,0); }
+    if(axis==='y') { grp.position.set(0,0.8,0); }
+    if(axis==='z') { grp.rotation.x = Math.PI/2; grp.position.set(0,0,0.8); }
+    grp.userData = { gizmoAxis: axis, gizmoType: 'translate' };
+    grp.traverse(m=>{ if(m.isMesh){ m.renderOrder=999; m.userData.gizmoAxis=axis; m.userData.gizmoType='translate'; } });
+    edGizmoArrows.push(grp);
+    return grp;
+  };
+
+  // Кольца вращения — тоже большие
+  const mkRotateRing = (color, axis) => {
+    const mat = new THREE.MeshBasicMaterial({ color, depthTest:false, side:THREE.DoubleSide });
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.1, 0.07, 8, 32), mat);
+    // Хитбокс-тор
+    const hit = new THREE.Mesh(
+      new THREE.TorusGeometry(1.1, 0.2, 8, 32),
+      new THREE.MeshBasicMaterial({ visible:false, depthTest:false })
+    );
+    const grp = new THREE.Group();
+    grp.add(ring); grp.add(hit);
+    if(axis==='x') grp.rotation.y = Math.PI/2;
+    if(axis==='z') grp.rotation.x = Math.PI/2;
+    grp.userData = { gizmoAxis: axis, gizmoType: 'rotate' };
+    grp.traverse(m=>{ if(m.isMesh){ m.renderOrder=999; m.userData.gizmoAxis=axis; m.userData.gizmoType='rotate'; } });
+    edGizmoArrows.push(grp);
+    return grp;
+  };
+
+  const tx = mkTranslateArrow(0xff2222, 'x');
+  const ty = mkTranslateArrow(0x22cc22, 'y');
+  const tz = mkTranslateArrow(0x2244ff, 'z');
+  const rx = mkRotateRing(0xff2222, 'x');   // Красный  = X (наклон вперёд/назад)
+  const ry = mkRotateRing(0xffcc00, 'y');   // Жёлтый  = Y (горизонтальный spin) — лежит горизонтально
+  const rz = mkRotateRing(0x2244ff, 'z');   // Синий   = Z (наклон вправо/влево) — стоит вертикально
+
+  // Масштабирование — маленькие кубики на концах осей
+  const mkScaleHandle = (color, axis) => {
+    const mat = new THREE.MeshBasicMaterial({ color, depthTest:false });
+    const cube = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.22), mat);
+    const hitbox = new THREE.Mesh(
+      new THREE.BoxGeometry(0.45, 0.45, 0.45),
+      new THREE.MeshBasicMaterial({ visible:false, depthTest:false })
+    );
+    const grp = new THREE.Group();
+    grp.add(cube); grp.add(hitbox);
+    if(axis==='x') grp.position.set(1.4, 0, 0);
+    if(axis==='y') grp.position.set(0, 1.4, 0);
+    if(axis==='z') grp.position.set(0, 0, 1.4);
+    grp.userData = { gizmoAxis: axis, gizmoType: 'scale' };
+    grp.traverse(m=>{ if(m.isMesh){ m.renderOrder=999; m.userData.gizmoAxis=axis; m.userData.gizmoType='scale'; } });
+    edGizmoArrows.push(grp);
+    return grp;
+  };
+  // Однородное масштабирование — белая сфера в центре
+  const mkScaleUniform = () => {
+    const mat = new THREE.MeshBasicMaterial({ color:0xffffff, depthTest:false });
+    const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8), mat);
+    const hitbox = new THREE.Mesh(
+      new THREE.SphereGeometry(0.35, 8, 8),
+      new THREE.MeshBasicMaterial({ visible:false, depthTest:false })
+    );
+    const grp = new THREE.Group();
+    grp.add(sphere); grp.add(hitbox);
+    grp.userData = { gizmoAxis: 'all', gizmoType: 'scale' };
+    grp.traverse(m=>{ if(m.isMesh){ m.renderOrder=999; m.userData.gizmoAxis='all'; m.userData.gizmoType='scale'; } });
+    edGizmoArrows.push(grp);
+    return grp;
+  };
+
+  const sx = mkScaleHandle(0xff2222, 'x');
+  const sy = mkScaleHandle(0x22cc22, 'y');
+  const sz = mkScaleHandle(0x2244ff, 'z');
+  const su = mkScaleUniform();
+
+  [tx,ty,tz,rx,ry,rz,sx,sy,sz,su].forEach(o=>g.add(o));
+  scene.add(g);
+  edGizmo = g;
+  g.visible = false;
+  updateGizmoMode();
+  return g;
+}
+
+function updateGizmoMode() {
+  if(!edGizmo) return;
+  edGizmoArrows.forEach(a => {
+    const t = a.userData.gizmoType;
+    if(edGizmoMode === 'translate') a.visible = (t === 'translate');
+    else if(edGizmoMode === 'rotate')    a.visible = (t === 'rotate');
+    else if(edGizmoMode === 'scale')     a.visible = (t === 'scale');
+    else a.visible = false;
+  });
+}
+
+function updateGizmoPosition() {
+  if(!edGizmo || !edSelectedFreeObj) { if(edGizmo) edGizmo.visible=false; return; }
+  edGizmo.position.copy(edSelectedFreeObj.mesh.position);
+  edGizmo.visible = true;
+  updateGizmoMode();
+}
+
+function spawnFreeObject(worldPos) {
+  const modelKey = edSelectedTile.modelKey;
+  const obj = assets.clone(modelKey);
+  if(!obj) return null;
+  scaleTo(obj, TILE_SIZE);
+  obj.position.copy(worldPos);
+  obj.traverse(m=>{ if(m.isMesh){ m.castShadow=true; m.receiveShadow=true; } });
+  obj.userData = { freeObj: true, modelKey, isFreeRoot: true };
+  scene.add(obj);
+  const fo = { mesh: obj, modelKey };
+  edFreeObjects.push(fo);
+  selectFreeObj(fo);
+  return fo;
+}
+
+function selectFreeObj(fo) {
+  edSelectedFreeObj = fo;
+  // Highlight: сбрасываем предыдущий
+  edFreeObjects.forEach(o => {
+    o.mesh.traverse(m=>{ if(m.isMesh && m._origEmissive!==undefined) { m.material.emissive&&m.material.emissive.setHex(m._origEmissive); } });
+  });
+  if(fo) {
+    fo.mesh.traverse(m=>{
+      if(m.isMesh && m.material && m.material.emissive) {
+        if(m._origEmissive===undefined) m._origEmissive = m.material.emissive.getHex();
+        m.material.emissive.setHex(0x442200);
+      }
+    });
+  }
+  updateGizmoPosition();
+}
+
+function deleteFreeObj(fo) {
+  if(!fo) return;
+  scene.remove(fo.mesh);
+  edFreeObjects = edFreeObjects.filter(o=>o!==fo);
+  if(edSelectedFreeObj===fo) { edSelectedFreeObj=null; if(edGizmo) edGizmo.visible=false; }
+}
+
+// Раздельный счётчик тапов для dbl-tap
+let _lastTapFo=null, _lastTapTime=0;
+
+function handleFreePlaceClick(e) {
+  const canvas = document.getElementById('canvas');
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = ((e.clientX-rect.left)/rect.width)*2-1;
+  const mouseY = -((e.clientY-rect.top)/rect.height)*2+1;
+  const mouse = new THREE.Vector2(mouseX, mouseY);
+  raycaster.setFromCamera(mouse, camera);
+
+  // 0. ERASE MODE в свободном режиме — удалить свободный объект
+  if(edEraseMode) {
+    const freeMeshes = [];
+    edFreeObjects.forEach(fo=>fo.mesh.traverse(m=>{if(m.isMesh){ m._foRef=fo; freeMeshes.push(m); }}));
+    if(freeMeshes.length > 0) {
+      const hits = raycaster.intersectObjects(freeMeshes, false);
+      if(hits.length > 0) {
+        const fo = hits[0].object._foRef;
+        if(fo) { deleteFreeObj(fo); document.getElementById('ed-info').textContent='🗑 Объект удалён'; return true; }
+      }
+    }
+    return false;
+  }
+
+  // 1. Проверяем гизмо (самый высокий приоритет)
+  if(edGizmo && edGizmo.visible) {
+    const allGizmoMeshes = [];
+    // Только ВИДИМЫЕ группы — иначе невидимые хитбоксы другого режима конфликтуют
+    edGizmoArrows.forEach(grp=>{ if(!grp.visible) return; grp.traverse(m=>{if(m.isMesh) allGizmoMeshes.push(m);}); });
+    const hits = raycaster.intersectObjects(allGizmoMeshes, false);
+    if(hits.length > 0) {
+      const h = hits[0].object;
+      onGizmoDragStart(e, h);
+      return true; // захватили гизмо
+    }
+  }
+
+  // 2. Проверяем существующие свободные объекты
+  const freeMeshes = [];
+  edFreeObjects.forEach(fo=>fo.mesh.traverse(m=>{if(m.isMesh){ m._foRef=fo; freeMeshes.push(m); }}));
+  if(freeMeshes.length > 0) {
+    const hits = raycaster.intersectObjects(freeMeshes, false);
+    if(hits.length > 0) {
+      const fo = hits[0].object._foRef;
+      if(fo) {
+        // Проверяем double-tap (< 400ms)
+        const now = Date.now();
+        if(_lastTapFo===fo && now-_lastTapTime < 400) {
+          deleteFreeObj(fo);
+          _lastTapFo=null;
+          document.getElementById('ed-info').textContent='🗑 Объект удалён';
+        } else {
+          _lastTapFo=fo; _lastTapTime=now;
+          selectFreeObj(fo);
+          document.getElementById('ed-info').textContent='✦ Выбран — тяни стрелки гизмо | двойной тап = удалить';
+        }
+        return true;
+      }
+    }
+  }
+
+  // 3. Ставим новый объект на землю
+  const gp = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
+  const pt = new THREE.Vector3();
+  raycaster.ray.intersectPlane(gp, pt);
+  if(pt) {
+    spawnFreeObject(pt);
+    document.getElementById('ed-info').textContent='✦ Объект поставлен | тяни стрелки гизмо | двойной тап = удалить';
+  }
+  return true;
+}
+
+function onGizmoDragStart(e, hitMesh) {
+  const axis = hitMesh.userData.gizmoAxis || hitMesh.parent?.userData?.gizmoAxis;
+  const type = hitMesh.userData.gizmoType || hitMesh.parent?.userData?.gizmoType;
+  if(!axis || !type || !edSelectedFreeObj) return;
+  const canvas = document.getElementById('canvas');
+  const rect = canvas.getBoundingClientRect();
+  const ms = edSelectedFreeObj.mesh.scale;
+  edGizmoDragging = {
+    axis, type,
+    startX: e.clientX - rect.left,
+    startY: e.clientY - rect.top,
+    startPos: edSelectedFreeObj.mesh.position.clone(),
+    startRot: { x:edSelectedFreeObj.mesh.rotation.x, y:edSelectedFreeObj.mesh.rotation.y, z:edSelectedFreeObj.mesh.rotation.z },
+    startScale: { x:ms.x, y:ms.y, z:ms.z },
+  };
+}
+
+function onGizmoDragMove(e) {
+  if(!edGizmoDragging || !edSelectedFreeObj) return;
+  const canvas = document.getElementById('canvas');
+  const rect = canvas.getBoundingClientRect();
+  const dx = (e.clientX-rect.left) - edGizmoDragging.startX;
+  const dy = (e.clientY-rect.top) - edGizmoDragging.startY;
+  const mesh = edSelectedFreeObj.mesh;
+
+  if(edGizmoDragging.type === 'translate') {
+    const p = edGizmoDragging.startPos.clone();
+    const spd = 0.05;
+    if(edGizmoDragging.axis==='x') p.x += dx*spd;
+    if(edGizmoDragging.axis==='y') p.y += -dy*spd;
+    if(edGizmoDragging.axis==='z') p.z += dy*spd;
+    mesh.position.copy(p);
+  } else if(edGizmoDragging.type === 'rotate') {
+    const spd = 0.02;
+    const sr = edGizmoDragging.startRot;
+    if(edGizmoDragging.axis==='x') mesh.rotation.x = sr.x + dy*spd;
+    if(edGizmoDragging.axis==='y') mesh.rotation.y = sr.y + dx*spd;
+    if(edGizmoDragging.axis==='z') mesh.rotation.z = sr.z + dx*spd;
+  } else if(edGizmoDragging.type === 'scale') {
+    // Drag right/up = bigger, drag left/down = smaller
+    const delta = (Math.abs(dx) > Math.abs(dy) ? dx : -dy);
+    const spd = 0.008;
+    const factor = Math.max(0.05, 1 + delta * spd);
+    const ss = edGizmoDragging.startScale;
+    if(edGizmoDragging.axis==='x')   mesh.scale.set(ss.x * factor, ss.y, ss.z);
+    else if(edGizmoDragging.axis==='y') mesh.scale.set(ss.x, ss.y * factor, ss.z);
+    else if(edGizmoDragging.axis==='z') mesh.scale.set(ss.x, ss.y, ss.z * factor);
+    else if(edGizmoDragging.axis==='all') {
+      // Однородное масштабирование — белая сфера
+      const uf = Math.max(0.05, 1 + delta * spd);
+      mesh.scale.set(ss.x * uf, ss.y * uf, ss.z * uf);
+    }
+  }
+  updateGizmoPosition();
+}
+
+function onGizmoDragEnd() { edGizmoDragging = null; }
+
+function setEraseMode(active) {
+  edEraseMode = active;
+  const btn = document.getElementById('ed-erase');
+  if(active) {
+    btn.classList.add('erase-on');
+    document.getElementById('ed-info').textContent = '🗑 Режим удаления: тапни на любой объект чтобы стереть • снова нажми кнопку чтобы выйти';
+    // Отключаем свободный режим при включении ластика
+    if(edFreePlaceMode) {
+      edFreePlaceMode = false;
+      const fp = document.getElementById('ed-free-place');
+      fp.style.borderColor=''; fp.style.color='';
+      const gm = document.getElementById('ed-gizmo-mode');
+      gm.style.display='none';
+      if(edGizmo) edGizmo.visible=false;
+      edSelectedFreeObj=null;
+    }
+  } else {
+    btn.classList.remove('erase-on');
+    document.getElementById('ed-info').textContent = 'Выбери тайл → тап для размещения';
+  }
+}
+
+function setupEditorEvents() {
+  document.getElementById('ed-rotate-cw').addEventListener('click', ()=>edRotateSelected(1));
+  document.getElementById('ed-rotate-ccw').addEventListener('click', ()=>edRotateSelected(-1));
+  document.getElementById('btn-editor-back').addEventListener('click', closeEditor);
+  document.getElementById('ed-save').addEventListener('click', saveEditorMap);
+  document.getElementById('ed-erase').addEventListener('click', ()=>{ setEraseMode(!edEraseMode); });
+
+  // Free place mode toggle
+  const freePlaceBtn = document.getElementById('ed-free-place');
+  const gizmoModeBtn = document.getElementById('ed-gizmo-mode');
+  freePlaceBtn.addEventListener('click', ()=>{
+    edFreePlaceMode = !edFreePlaceMode;
+    // Выключаем ластик при входе в свободный режим
+    if(edFreePlaceMode && edEraseMode) setEraseMode(false);
+    freePlaceBtn.style.borderColor = edFreePlaceMode ? '#f5a623' : '';
+    freePlaceBtn.style.color = edFreePlaceMode ? '#f5a623' : '';
+    gizmoModeBtn.style.display = edFreePlaceMode ? 'block' : 'none';
+    if(edFreePlaceMode) {
+      createGizmo();
+      document.getElementById('ed-info').textContent = '🎯 Свободный режим: тап = поставить | тап на объект = выбрать | двойной тап = удалить';
+    } else {
+      if(edGizmo) edGizmo.visible=false;
+      edSelectedFreeObj=null;
+      document.getElementById('ed-info').textContent = 'Выбери тайл → тап для размещения';
+    }
+  });
+
+  const gizmoModeLabels = { translate:'↔ Перемещ.', rotate:'↻ Вращение', scale:'⤡ Размер' };
+  const gizmoModeCycle  = { translate:'rotate', rotate:'scale', scale:'translate' };
+  const gizmoModeColors = { translate:'', rotate:'#44aaff', scale:'#44ff88' };
+  gizmoModeBtn.addEventListener('click', ()=>{
+    edGizmoMode = gizmoModeCycle[edGizmoMode] || 'translate';
+    gizmoModeBtn.textContent = gizmoModeLabels[edGizmoMode];
+    gizmoModeBtn.style.color = gizmoModeColors[edGizmoMode];
+    gizmoModeBtn.style.borderColor = gizmoModeColors[edGizmoMode];
+    updateGizmoMode();
+    updateGizmoPosition();
+  });
+
+  document.getElementById('ed-clear').addEventListener('click', ()=>{
+    edCellData={};
+    editorGrid=Array.from({length:GRID_H},()=>Array(TILE_GRASS).fill(TILE_GRASS));
+    // Also clear free objects
+    edFreeObjects.forEach(fo=>scene.remove(fo.mesh));
+    edFreeObjects=[];
+    edSelectedFreeObj=null;
+    if(edGizmo) edGizmo.visible=false;
+    editorGrid=Array.from({length:GRID_H},()=>Array(GRID_W).fill(TILE_GRASS));
+    buildEditorEmptyMap();
+  });
+  document.getElementById('ed-play').addEventListener('click', ()=>{
+    let hasStart = false, hasEnd = false;
+    for(let r=0;r<GRID_H;r++) for(let c=0;c<GRID_W;c++) {
+      if(editorGrid[r][c]===TILE_START) hasStart=true;
+      if(editorGrid[r][c]===TILE_END) hasEnd=true;
+    }
+    if(!hasStart || !hasEnd) {
+      document.getElementById('ed-info').textContent = '⚠ Поставь Старт 🟢 и Финиш 🔴!';
+      return;
+    }
+    const testPath = computePath(editorGrid);
+    if(testPath.length < 2) {
+      document.getElementById('ed-info').textContent = '⚠ Нет пути! Соедини Старт с Финишем дорогой.';
+      return;
+    }
+    const mapCopy = editorGrid.map(r=>[...r]);
+    document.getElementById('editor-screen').style.display='none';
+    editorActive=false;
+    // Восстанавливаем небо/океан при старте игры из редактора
+    if (window._skyTex) scene.background = window._skyTex;
+    else scene.background = new THREE.Color(0x87ceeb);
+    renderer.setClearColor(0x87ceeb, 1);
+    if (window._oceanMesh)   window._oceanMesh.visible  = true;
+    if (window._editorFloor) window._editorFloor.visible = false;
+    startGame(mapCopy, edCellData);
+  });
+}
+
+// ============================================================
+// PLACE TOWER
+// ============================================================
+function placeTower(row, col, def) {
+  if (gold < def.cost) return false;
+  if (grid[row][col] !== TILE_GRASS) return false;
+  if (towers.find(t => t.row===row && t.col===col)) return false;
+  
+  gold -= def.cost;
+  updateHUD();
+  
+  const tower = {
+    id: Date.now() + Math.random(),
+    row, col, def,
+    level: 1,
+    damage: def.damage,
+    range: def.range,
+    attackSpeed: def.attackSpeed,
+    cooldown: 0,
+    totalSpent: def.cost,
+    special: def.special || null,
+  };
+  towers.push(tower);
+  
+  // 3D model
+  let model = assets.clone(def.modelKey);
+  if (!model) {
+    const geo = new THREE.CylinderGeometry(0.25, 0.3, 0.7, 8);
+    const mat = new THREE.MeshLambertMaterial({ color: def.color || 0x888888 });
+    model = new THREE.Mesh(geo, mat);
+  }
+  
+  // Scale
+  const box = new THREE.Box3().setFromObject(model);
+  const sz = new THREE.Vector3();
+  box.getSize(sz);
+  const maxDim = Math.max(sz.x, sz.y, sz.z);
+  if (maxDim > 0) {
+    const s = 0.7 / maxDim;
+    model.scale.set(s, s, s);
+  }
+  
+  model.position.set(col * TILE_SIZE, 0.15, row * TILE_SIZE);
+  model.traverse(m => { if(m.isMesh) { m.castShadow=true; } });
+  model.userData = { towerId: tower.id };
+  addToScene(model);
+  towerMeshes[tower.id] = model;
+  
+  return true;
+}
+
+function upgradeTower(tower) {
+  if (tower.level >= 4) return false;
+  const upg = UPGRADE_MULT[tower.level - 1];
+  const cost = Math.floor(tower.def.cost * upg.cost);
+  if (gold < cost) return false;
+  
+  gold -= cost;
+  tower.totalSpent += cost;
+  tower.damage = Math.floor(tower.def.damage * upg.damage);
+  tower.range = tower.def.range * upg.range;
+  tower.attackSpeed = tower.def.attackSpeed * upg.attackSpeed;
+  tower.level++;
+  
+  // Visual upgrade indicator
+  const mesh = towerMeshes[tower.id];
+  if (mesh) {
+    mesh.scale.multiplyScalar(1.1);
+    // Flash
+    mesh.traverse(m => {
+      if (m.isMesh && m.material) {
+        const orig = m.material.emissive ? m.material.emissive.clone() : new THREE.Color(0);
+        if (m.material.emissive) m.material.emissive.set(0xffff00);
+        setTimeout(() => { if(m.material.emissive) m.material.emissive.copy(orig); }, 300);
+      }
+    });
+  }
+  
+  updateHUD();
+  showTowerInfo(tower);
+  return true;
+}
+
+function sellTower(tower) {
+  const idx = towers.indexOf(tower);
+  if (idx === -1) return;
+  
+  gold += Math.floor(tower.totalSpent * 0.6);
+  towers.splice(idx, 1);
+  
+  const mesh = towerMeshes[tower.id];
+  if (mesh) { scene.remove(mesh); delete towerMeshes[tower.id]; }
+  
+  hideTowerInfo();
+  updateHUD();
+}
+
+// ============================================================
+// ENEMIES
+// ============================================================
+function spawnEnemy(typeId, hpMult) {
+  const def = ENEMY_DEFS.find(e => e.id === typeId) || ENEMY_DEFS[0];
+  
+  let model = assets.clone(def.modelKey);
+  if (!model) {
+    const geo = new THREE.SphereGeometry(0.25, 8, 6);
+    const mat = new THREE.MeshLambertMaterial({ color: def.color });
+    model = new THREE.Mesh(geo, mat);
+  }
+  
+  const box = new THREE.Box3().setFromObject(model);
+  const sz = new THREE.Vector3();
+  box.getSize(sz);
+  const maxDim = Math.max(sz.x, sz.y, sz.z);
+  const s = (def.scale || 0.4) / maxDim;
+  model.scale.set(s, s, s);
+  
+  // Start position
+  const startCell = path[0];
+  model.position.set(startCell[1] * TILE_SIZE, 0.3, startCell[0] * TILE_SIZE);
+  model.traverse(m => { if(m.isMesh) m.castShadow = true; });
+  addToScene(model);
+  
+  // Health bar (sprite)
+  const hbCanvas = document.createElement('canvas');
+  hbCanvas.width = 64; hbCanvas.height = 8;
+  const hbCtx = hbCanvas.getContext('2d');
+  const hbTex = new THREE.CanvasTexture(hbCanvas);
+  const hbMat = new THREE.SpriteMaterial({ map: hbTex, depthTest: false });
+  const hbSprite = new THREE.Sprite(hbMat);
+  hbSprite.scale.set(0.8, 0.1, 1);
+  hbSprite.position.set(0, 0.6, 0);
+  model.add(hbSprite);
+  
+  const maxHp = def.hp * hpMult;
+  const enemy = {
+    id: ++enemyId,
+    def, model, hbCanvas, hbCtx, hbTex, hbSprite,
+    hp: maxHp, maxHp,
+    speed: def.speed,
+    pathIdx: 0,
+    dead: false,
+    reached: false,
+    slowTimer: 0,
+    poisonTimer: 0,
+    poisonDmg: 0,
+    stunTimer: 0,
+  };
+  
+  enemies.push(enemy);
+  updateHealthBar(enemy);
+  return enemy;
+}
+
+function updateHealthBar(enemy) {
+  const pct = Math.max(0, enemy.hp / enemy.maxHp);
+  const ctx = enemy.hbCtx;
+  ctx.clearRect(0, 0, 64, 8);
+  ctx.fillStyle = '#333';
+  ctx.fillRect(0, 0, 64, 8);
+  ctx.fillStyle = pct > 0.5 ? '#2ecc71' : pct > 0.25 ? '#f39c12' : '#e74c3c';
+  ctx.fillRect(1, 1, Math.floor(pct * 62), 6);
+  enemy.hbTex.needsUpdate = true;
+}
+
+function damageEnemy(enemy, dmg, effect) {
+  if (enemy.dead) return;
+  enemy.hp -= dmg;
+  updateHealthBar(enemy);
+  
+  if (effect === 'slow') enemy.slowTimer = Math.max(enemy.slowTimer, 2);
+  if (effect === 'freeze') enemy.slowTimer = Math.max(enemy.slowTimer, 3);
+  if (effect === 'poison') { enemy.poisonTimer = 5; enemy.poisonDmg = dmg * 0.1; }
+  if (effect === 'stun') enemy.stunTimer = Math.max(enemy.stunTimer, 1.5);
+  
+  spawnHitParticle(enemy.model.position.clone(), dmg);
+  
+  if (enemy.hp <= 0) killEnemy(enemy);
+}
+
+function killEnemy(enemy) {
+  if (enemy.dead) return;
+  enemy.dead = true;
+  gold += enemy.def.reward;
+  updateHUD();
+  spawnDeathParticles(enemy.model.position.clone());
+  scene.remove(enemy.model);
+}
+
+// ============================================================
+// PROJECTILES
+// ============================================================
+function fireProjectile(tower, enemy) {
+  const startPos = new THREE.Vector3(
+    tower.col * TILE_SIZE, 0.5, tower.row * TILE_SIZE
+  );
+  
+  const geo = new THREE.SphereGeometry(0.08, 6, 4);
+  const colors = { cannon:0xffaa00, sniper:0x66aaff, machinegun:0x44ff44, freeze:0x88eeff, lightning:0xffff44 };
+  const mat = new THREE.MeshBasicMaterial({ color: colors[tower.def.id] || 0xffffff });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.copy(startPos);
+  addToScene(mesh);
+  
+  const proj = {
+    mesh,
+    targetId: enemy.id,
+    tower,
+    damage: tower.damage,
+    speed: 8,
+    dead: false,
+  };
+  projectiles.push(proj);
+}
+
+// ============================================================
+// PARTICLES
+// ============================================================
+function spawnHitParticle(pos, dmg) {
+  for (let i = 0; i < 3; i++) {
+    const geo = new THREE.SphereGeometry(0.05, 4, 3);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xffcc44 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(pos);
+    addToScene(mesh);
+    particles.push({
+      mesh,
+      vel: new THREE.Vector3((Math.random()-0.5)*2, Math.random()*3, (Math.random()-0.5)*2),
+      life: 0.4,
+      maxLife: 0.4,
+    });
+  }
+}
+
+function spawnDeathParticles(pos) {
+  for (let i = 0; i < 8; i++) {
+    const geo = new THREE.SphereGeometry(0.07, 4, 3);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xff4422 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(pos);
+    addToScene(mesh);
+    particles.push({
+      mesh,
+      vel: new THREE.Vector3((Math.random()-0.5)*4, Math.random()*5+1, (Math.random()-0.5)*4),
+      life: 0.8,
+      maxLife: 0.8,
+    });
+  }
+}
+
+
+// ── ОТРАЖЕНИЕ ──────────────────────────────────────────────────
+
+// ── ОТРАЖЕНИЕ: перевёрнутая копия тайлов карты ─────────────────
+// ── ОТРАЖЕНИЕ: stencil-маска = точно по силуэту клонов ─────────────────────
+const _MIRROR_Y = -0.01;
+const _REFL_GAP  =  0.003;
+
+function buildReflection() {
+  if (_reflGroup) { scene.remove(_reflGroup); _reflGroup = null; }
+  if (window._blueOverlay) { scene.remove(window._blueOverlay); window._blueOverlay = null; }
+
+  const grp = new THREE.Group();
+
+  tileObjects.forEach(obj => {
+    const clone = obj.clone();
+    clone.traverse(child => {
+      if (!child.isMesh || !child.material) return;
+      const mats = Array.isArray(child.material) ? child.material : [child.material];
+      child.material = mats.map(m => {
+        const nm = m.clone();
+        nm.transparent = false;
+        nm.opacity = 1.0;
+        nm.depthWrite = true;
+        nm.side = THREE.BackSide;
+        // ── STENCIL: каждый пиксель отражения пишет 1 в stencil-буфер ──
+        nm.stencilWrite = true;
+        nm.stencilFunc  = THREE.AlwaysStencilFunc;
+        nm.stencilZPass = THREE.ReplaceStencilOp;
+        nm.stencilRef   = 1;
+        return nm;
+      });
+      if (child.material.length === 1) child.material = child.material[0];
+      child.receiveShadow = false;
+      child.castShadow    = false;
+    });
+    grp.add(clone);
+  });
+
+  grp.scale.set(1, -1, 1);
+  grp.position.y = 2 * _MIRROR_Y - _REFL_GAP;
+  grp.renderOrder = 1;
+  _reflGroup = grp;
+  scene.add(grp);
+
+  // ── Синий оверлей с размытыми краями через canvas-градиент ──
+  {
+    // Текстура: полная непрозрачность до 80% от центра, затем плавное размытие к краям
+    // Используем квадратный canvas с линейными градиентами по всем 4 сторонам
+    const SZ = 512;
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = SZ;
+    const cx = cv.getContext('2d');
+
+    // Сначала заливаем белым
+    cx.fillStyle = 'rgba(255,255,255,1)';
+    cx.fillRect(0, 0, SZ, SZ);
+
+    // Fade зона = 20% от края (100% - 80% = 20%)
+    const FADE = SZ * 0.20;
+
+    // Накладываем 4 линейных градиента по краям через destination-out
+    cx.globalCompositeOperation = 'destination-out';
+
+    // Левый край
+    const gl = cx.createLinearGradient(0, 0, FADE, 0);
+    gl.addColorStop(0, 'rgba(0,0,0,1)');
+    gl.addColorStop(1, 'rgba(0,0,0,0)');
+    cx.fillStyle = gl; cx.fillRect(0, 0, FADE, SZ);
+
+    // Правый край
+    const gr = cx.createLinearGradient(SZ, 0, SZ - FADE, 0);
+    gr.addColorStop(0, 'rgba(0,0,0,1)');
+    gr.addColorStop(1, 'rgba(0,0,0,0)');
+    cx.fillStyle = gr; cx.fillRect(SZ - FADE, 0, FADE, SZ);
+
+    // Верхний край
+    const gt = cx.createLinearGradient(0, 0, 0, FADE);
+    gt.addColorStop(0, 'rgba(0,0,0,1)');
+    gt.addColorStop(1, 'rgba(0,0,0,0)');
+    cx.fillStyle = gt; cx.fillRect(0, 0, SZ, FADE);
+
+    // Нижний край
+    const gb = cx.createLinearGradient(0, SZ, 0, SZ - FADE);
+    gb.addColorStop(0, 'rgba(0,0,0,1)');
+    gb.addColorStop(1, 'rgba(0,0,0,0)');
+    cx.fillStyle = gb; cx.fillRect(0, SZ - FADE, SZ, FADE);
+
+    cx.globalCompositeOperation = 'source-over';
+
+    const fadeTex = new THREE.CanvasTexture(cv);
+
+    const geo = new THREE.PlaneGeometry(200, 200);
+    geo.rotateX(-Math.PI / 2);
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0x4ab8e8,
+      alphaMap: fadeTex,
+      transparent: true,
+      opacity: 0.30,
+      depthWrite: false,
+      stencilWrite: false,
+      stencilFunc:  THREE.EqualStencilFunc,
+      stencilRef:   1,
+      stencilFail:  THREE.KeepStencilOp,
+      stencilZFail: THREE.KeepStencilOp,
+      stencilZPass: THREE.KeepStencilOp,
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(
+      (GRID_W - 1) / 2 * TILE_SIZE,
+      _MIRROR_Y - _REFL_GAP / 2 + 0.005,
+      (GRID_H - 1) / 2 * TILE_SIZE
+    );
+    mesh.renderOrder = 2;
+    scene.add(mesh);
+    window._blueOverlay = mesh;
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────
+
+
+// ============================================================
+// GAME LOOP
+// ============================================================
+let lastTime = 0;
+let rangeRing = null;
+
+function gameLoop(ts) {
+  animFrameId = requestAnimationFrame(gameLoop);
+  
+  const dt = Math.min((ts - lastTime) / 1000, 0.1) * gameSpeed;
+  lastTime = ts;
+
+  // Анимация океана — медленный сдвиг UV
+  if (window._oceanMesh && window._oceanMesh.material.map) {
+    window._oceanT = (window._oceanT || 0) + 0.0003;
+    window._oceanMesh.material.map.offset.set(
+      Math.sin(window._oceanT * 0.7) * 0.04,
+      window._oceanT * 0.5 % 1
+    );
+  }
+
+
+  if (gameState !== 'playing') {
+    renderer.render(scene, camera);
+    return;
+  }
+  
+  updateEnemies(dt);
+  updateTowers(dt);
+  updateProjectiles(dt);
+  updateParticles(dt);
+  updateWaveSpawner(dt);
+  checkWaveComplete();
+  
+  renderer.render(scene, camera);
+}
+
+function updateEnemies(dt) {
+  for (const enemy of enemies) {
+    if (enemy.dead || enemy.reached) continue;
+    
+    if (enemy.stunTimer > 0) { enemy.stunTimer -= dt; continue; }
+    
+    // Status effects
+    if (enemy.poisonTimer > 0) {
+      enemy.poisonTimer -= dt;
+      damageEnemy(enemy, enemy.poisonDmg * dt, null);
+    }
+    
+    const speed = enemy.slowTimer > 0 ? enemy.speed * 0.4 : enemy.speed;
+    if (enemy.slowTimer > 0) enemy.slowTimer -= dt;
+    
+    // Move along path
+    if (enemy.pathIdx >= path.length - 1) {
+      // Reached end
+      enemy.reached = true;
+      lives--;
+      updateHUD();
+      scene.remove(enemy.model);
+      if (lives <= 0) triggerGameOver();
+      continue;
+    }
+    
+    const nextCell = path[enemy.pathIdx + 1];
+    const target = new THREE.Vector3(nextCell[1] * TILE_SIZE, 0.3, nextCell[0] * TILE_SIZE);
+    const dir = target.clone().sub(enemy.model.position);
+    const dist = dir.length();
+    
+    if (dist < 0.05) {
+      enemy.pathIdx++;
+    } else {
+      dir.normalize();
+      enemy.model.position.add(dir.multiplyScalar(speed * dt));
+      enemy.model.rotation.y = Math.atan2(dir.x, dir.z);
+    }
+  }
+  
+  // Clean dead/reached
+  enemies = enemies.filter(e => !e.dead && !e.reached);
+}
+
+function updateTowers(dt) {
+  for (const tower of towers) {
+    tower.cooldown = Math.max(0, tower.cooldown - dt);
+    if (tower.cooldown > 0) continue;
+    
+    // Find target
+    const tPos = new THREE.Vector3(tower.col * TILE_SIZE, 0, tower.row * TILE_SIZE);
+    let best = null, bestPathIdx = -1;
+    
+    for (const enemy of enemies) {
+      if (enemy.dead || enemy.reached) continue;
+      const dist = tPos.distanceTo(enemy.model.position);
+      if (dist > tower.range) continue;
+      if (enemy.pathIdx > bestPathIdx) { best = enemy; bestPathIdx = enemy.pathIdx; }
+    }
+    
+    if (!best) continue;
+    
+    tower.cooldown = 1 / tower.attackSpeed;
+    
+    // Special: lightning chains
+    if (tower.def.id === 'lightning') {
+      const nearby = enemies.filter(e => !e.dead && !e.reached &&
+        tPos.distanceTo(e.model.position) <= tower.range);
+      const targets = nearby.slice(0, 3);
+      targets.forEach(t => damageEnemy(t, tower.damage, null));
+      // Visual lightning effect
+      if (targets.length > 0) spawnHitParticle(targets[0].model.position.clone(), tower.damage);
+    } else {
+      const effect = tower.def.id === 'freeze' ? 'freeze' : 
+                     (tower.special || null);
+      fireProjectile(tower, best);
+    }
+    
+    // Rotate tower toward enemy
+    const mesh = towerMeshes[tower.id];
+    if (mesh) {
+      const dir = best.model.position.clone().sub(mesh.position);
+      mesh.rotation.y = Math.atan2(dir.x, dir.z);
+    }
+  }
+}
+
+function updateProjectiles(dt) {
+  for (const proj of projectiles) {
+    if (proj.dead) continue;
+    
+    const enemy = enemies.find(e => e.id === proj.targetId && !e.dead && !e.reached);
+    if (!enemy) {
+      proj.dead = true;
+      scene.remove(proj.mesh);
+      continue;
+    }
+    
+    const dir = enemy.model.position.clone().sub(proj.mesh.position);
+    const dist = dir.length();
+    
+    if (dist < 0.2) {
+      const effect = proj.tower.def.id === 'freeze' ? 'freeze' :
+                     proj.tower.def.id === 'cannon' ? null : 
+                     (proj.tower.special || null);
+      
+      // Splash for cannon
+      if (proj.tower.def.id === 'cannon') {
+        for (const e of enemies) {
+          if (e.dead || e.reached) continue;
+          if (enemy.model.position.distanceTo(e.model.position) < 1.2) {
+            damageEnemy(e, proj.damage * 0.5, null);
+          }
+        }
+        damageEnemy(enemy, proj.damage, null);
+      } else {
+        damageEnemy(enemy, proj.damage, effect);
+      }
+      
+      proj.dead = true;
+      scene.remove(proj.mesh);
+    } else {
+      dir.normalize();
+      proj.mesh.position.add(dir.multiplyScalar(proj.speed * dt));
+    }
+  }
+  
+  projectiles = projectiles.filter(p => !p.dead);
+}
+
+function updateParticles(dt) {
+  for (const p of particles) {
+    p.life -= dt;
+    if (p.life <= 0) {
+      scene.remove(p.mesh);
+      continue;
+    }
+    p.vel.y -= 9.8 * dt;
+    p.mesh.position.add(p.vel.clone().multiplyScalar(dt));
+    const a = p.life / p.maxLife;
+    if (p.mesh.material) p.mesh.material.opacity = a;
+  }
+  particles = particles.filter(p => p.life > 0);
+}
+
+function updateWaveSpawner(dt) {
+  if (!waveActive || spawnQueue.length === 0) return;
+  
+  spawnTimer -= dt;
+  if (spawnTimer <= 0 && spawnQueue.length > 0) {
+    const next = spawnQueue.shift();
+    spawnEnemy(next.type, next.hpMult);
+    spawnTimer = next.interval || 1;
+  }
+}
+
+function checkWaveComplete() {
+  if (!waveActive) return;
+  if (spawnQueue.length > 0) return;
+  if (enemies.some(e => !e.dead && !e.reached)) return;
+  
+  waveActive = false;
+  
+  document.getElementById('btn-start-wave').classList.add('primary');
+  
+  if (wave >= TOTAL_WAVES) {
+    triggerVictory();
+  } else {
+    showWaveNotify(`Wave ${wave} Complete!`, `Prepare for Wave ${wave + 1}`);
+    // Bonus gold
+    gold += 50 + wave * 10;
+    updateHUD();
+  }
+}
+
+// ============================================================
+// WAVE MANAGEMENT
+// ============================================================
+function startWave() {
+  if (waveActive) return;
+  if (path.length < 2) { alert('No valid path!'); return; }
+  
+  wave++;
+  waveActive = true;
+  
+  const waveDef = buildWave(wave);
+  const si = waveDef.spawnInterval;
+  
+  spawnQueue = waveDef.enemies.map(e => ({ ...e, interval: si }));
+  spawnTimer = 0;
+  
+  
+  document.getElementById('btn-start-wave').classList.remove('primary');
+  
+  const isBoss = wave % 5 === 0;
+  showWaveNotify(`Wave ${wave}${isBoss ? ' 👹 BOSS' : ''}!`, isBoss ? 'Boss incoming!' : 'Defend your base!');
+  
+  updateHUD();
+}
+
+function showWaveNotify(title, sub) {
+  const el = document.getElementById('wave-notify');
+  document.getElementById('wn-title').textContent = title;
+  document.getElementById('wn-sub').textContent = sub;
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 2500);
+}
+
+// ============================================================
+// UI
+// ============================================================
+function updateHUD() {
+  document.getElementById('hud-gold').textContent = gold;
+  document.getElementById('hud-lives').textContent = lives;
+  document.getElementById('hud-gold').textContent = wave + '/' + TOTAL_WAVES;
+  document.getElementById('hud-wave-text').textContent = gold;
+  document.getElementById('hud-lives').textContent = lives;
+  document.getElementById('wave-info').textContent = waveActive ? `Enemies: ${enemies.length + spawnQueue.length}` : 'Ready';
+  
+  // Update item card affordability
+  document.querySelectorAll('.item-card').forEach(card => {
+    const cost = parseInt(card.dataset.cost || '0');
+    card.classList.toggle('disabled', gold < cost);
+  });
+}
+
+// ============================================================
+// THUMBNAIL RENDERER — рендерит 3D модель в маленький canvas
+// ============================================================
+function renderModelThumb(modelKey, size = 80) {
+  // Offscreen Three.js сцена
+  const tw = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  tw.setSize(size, size);
+  tw.setPixelRatio(2);
+  tw.setClearColor(0x000000, 0);
+  tw.outputEncoding = THREE.sRGBEncoding;
+  tw.toneMapping = THREE.ACESFilmicToneMapping;
+  tw.toneMappingExposure = 0.9;
+
+  const ts = new THREE.Scene();
+
+  // Освещение
+  ts.add(new THREE.AmbientLight(0xffffff, 0.8));
+  const dl = new THREE.DirectionalLight(0xffffff, 1.2);
+  dl.position.set(3, 5, 4);
+  ts.add(dl);
+  const fl = new THREE.DirectionalLight(0xaaccff, 0.4);
+  fl.position.set(-2, 2, -3);
+  ts.add(fl);
+
+  // Модель
+  const obj = assets.clone(modelKey);
+  if (!obj) { tw.dispose(); return null; }
+
+  ts.add(obj);
+
+  // Масштаб
+  const box = new THREE.Box3().setFromObject(obj);
+  const bsz = new THREE.Vector3();
+  box.getSize(bsz);
+  const bc = new THREE.Vector3();
+  box.getCenter(bc);
+  const maxDim = Math.max(bsz.x, bsz.y, bsz.z);
+  if (maxDim > 0.01) {
+    const s = 1.6 / maxDim;
+    obj.scale.set(s, s, s);
+  }
+  // Центрируем
+  box.setFromObject(obj);
+  box.getCenter(bc);
+  obj.position.sub(bc);
+
+  // Камера — изометрический вид
+  const tc = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+  tc.position.set(2.2, 2.0, 2.2);
+  tc.lookAt(0, 0, 0);
+
+  tw.render(ts, tc);
+  const url = tw.domElement.toDataURL('image/png');
+  tw.dispose();
+  ts.remove(obj);
+  return url;
+}
+
+// Кэш миниатюр чтобы не рендерить одно и то же дважды
+const _thumbCache = {};
+
+function getThumb(modelKey) {
+  if (!_thumbCache[modelKey]) {
+    _thumbCache[modelKey] = renderModelThumb(modelKey) || '';
+  }
+  return _thumbCache[modelKey];
+}
+
+function buildBottomPanel() {
+  const towersTab = document.getElementById('tab-towers');
+  const animalsTab = document.getElementById('tab-animals');
+  
+  towersTab.innerHTML = '';
+  animalsTab.innerHTML = '';
+  
+  TOWER_DEFS.forEach(def => {
+    const card = document.createElement('div');
+    card.className = 'item-card';
+    card.dataset.id = def.id;
+    card.dataset.cost = def.cost;
+    card.dataset.type = 'tower';
+    const thumb = getThumb(def.modelKey);
+    const imgHtml = thumb
+      ? `<img src="${thumb}" style="width:52px;height:52px;object-fit:contain;">`
+      : `<img src="assets/icons/ic_target.png" style="width:36px;height:36px;">`;
+    card.innerHTML = `<div class="item-icon-wrap" style="width:52px;height:52px;">${imgHtml}</div><div class="item-name">${def.name}</div><div class="item-cost">${def.cost}</div>`;
+    card.addEventListener('click', () => selectTowerType(def));
+    card.addEventListener('mouseenter', e => showTooltip(e, def.name, def.desc));
+    card.addEventListener('mouseleave', hideTooltip);
+    towersTab.appendChild(card);
+  });
+  
+  ANIMAL_DEFS.forEach(def => {
+    const card = document.createElement('div');
+    card.className = 'item-card';
+    card.dataset.id = def.id;
+    card.dataset.cost = def.cost;
+    card.dataset.type = 'animal';
+    const thumb = getThumb(def.modelKey);
+    const imgHtml = thumb
+      ? `<img src="${thumb}" style="width:52px;height:52px;object-fit:contain;">`
+      : `<img src="assets/icons/ic_like.png" style="width:36px;height:36px;">`;
+    card.innerHTML = `<div class="item-icon-wrap" style="width:52px;height:52px;">${imgHtml}</div><div class="item-name">${def.name}</div><div class="item-cost">${def.cost}</div>`;
+    card.addEventListener('click', () => selectTowerType(def));
+    card.addEventListener('mouseenter', e => showTooltip(e, def.name, def.desc));
+    card.addEventListener('mouseleave', hideTooltip);
+    animalsTab.appendChild(card);
+  });
+}
+
+function selectTowerType(def) {
+  if (gold < def.cost) return;
+  selectedTowerType = def;
+  selectedTower = null;
+  hideTowerInfo();
+  
+  document.querySelectorAll('.item-card').forEach(c => 
+    c.classList.toggle('selected', c.dataset.id === def.id));
+  
+  showRangeRing(null); // hide until hover
+}
+
+function deselectAll() {
+  selectedTowerType = null;
+  selectedTower = null;
+  document.querySelectorAll('.item-card').forEach(c => c.classList.remove('selected'));
+  hideTowerInfo();
+  removeRangeRing();
+}
+
+function showTowerInfo(tower) {
+  selectedTower = tower;
+  const panel = document.getElementById('tower-info');
+  panel.classList.remove('hidden'); panel.classList.add('visible');
+  
+  document.getElementById('ti-name').textContent = `${tower.def.icon} ${tower.def.name}`;
+  document.getElementById('ti-level').textContent = `${tower.level}/4`;
+  document.getElementById('ti-damage').textContent = tower.damage;
+  document.getElementById('ti-range').textContent = tower.range.toFixed(1);
+  document.getElementById('ti-speed').textContent = tower.attackSpeed.toFixed(1) + '/s';
+  
+  if (tower.level < 4) {
+    const upg = UPGRADE_MULT[tower.level - 1];
+    const cost = Math.floor(tower.def.cost * upg.cost);
+    document.getElementById('btn-upgrade').textContent = `Upgrade (💰${cost})`;
+    document.getElementById('btn-upgrade').disabled = false;
+  } else {
+    document.getElementById('btn-upgrade').textContent = 'Max Level';
+    document.getElementById('btn-upgrade').disabled = true;
+  }
+  
+  const sellVal = Math.floor(tower.totalSpent * 0.6);
+  document.getElementById('btn-sell').textContent = `Sell (💰${sellVal})`;
+  
+  showRangeRing(tower);
+}
+
+function hideTowerInfo() {
+  document.getElementById('tower-info').classList.add('hidden'); document.getElementById('tower-info').classList.remove('visible');
+  selectedTower = null;
+  removeRangeRing();
+}
+
+// Range ring (3D circle)
+let rangeRingMesh = null;
+function showRangeRing(tower) {
+  removeRangeRing();
+  if (!tower) return;
+  const geo = new THREE.RingGeometry(tower.range - 0.05, tower.range, 32);
+  const mat = new THREE.MeshBasicMaterial({ color: 0xffcc44, side: THREE.DoubleSide, transparent: true, opacity: 0.25 });
+  rangeRingMesh = new THREE.Mesh(geo, mat);
+  rangeRingMesh.rotation.x = -Math.PI / 2;
+  rangeRingMesh.position.set(tower.col * TILE_SIZE, 0.05, tower.row * TILE_SIZE);
+  addToScene(rangeRingMesh);
+}
+
+function removeRangeRing() {
+  if (rangeRingMesh) { scene.remove(rangeRingMesh); rangeRingMesh = null; }
+}
+
+let hoverRangeRing = null;
+function showHoverRange(row, col, def) {
+  if (hoverRangeRing) { scene.remove(hoverRangeRing); hoverRangeRing = null; }
+  const geo = new THREE.RingGeometry(def.range - 0.05, def.range, 32);
+  const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.15 });
+  hoverRangeRing = new THREE.Mesh(geo, mat);
+  hoverRangeRing.rotation.x = -Math.PI / 2;
+  hoverRangeRing.position.set(col * TILE_SIZE, 0.05, row * TILE_SIZE);
+  addToScene(hoverRangeRing);
+}
+
+function hideHoverRange() {
+  if (hoverRangeRing) { scene.remove(hoverRangeRing); hoverRangeRing = null; }
+}
+
+function showTooltip(e, name, desc) {
+  const tt = document.getElementById('tooltip');
+  document.getElementById('tt-name').textContent = name;
+  document.getElementById('tt-desc').textContent = desc;
+  tt.classList.remove('hidden');
+  tt.style.left = (e.clientX + 12) + 'px';
+  tt.style.top = (e.clientY - 40) + 'px';
+}
+function hideTooltip() { document.getElementById('tooltip').classList.add('hidden'); }
+
+// ============================================================
+// INPUT HANDLING
+// ============================================================
+function onCanvasClick(e) {
+  const canvas = document.getElementById('canvas');
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  const mouseY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  const mouse = new THREE.Vector2(mouseX, mouseY);
+
+  // Editor mode
+  if(editorActive) {
+    // GRID MODE
+    raycaster.setFromCamera(mouse, camera);
+
+    // ERASE MODE — удалить тайл под курсором
+    if(edEraseMode) {
+      // Сначала пробуем попасть в 3D тайл (точнее)
+      const tileMeshes = tileObjects.filter(o => o.userData.type === 'tile');
+      const tHits = raycaster.intersectObjects(tileMeshes, true);
+      let eraseR = -1, eraseC = -1;
+      for(const h of tHits) {
+        let o=h.object; while(o&&!o.userData.row&&o.userData.row!==0) o=o.parent;
+        if(o && o.userData.row != null) { eraseR=o.userData.row; eraseC=o.userData.col; break; }
+      }
+      // Фоллбэк: плоскость
+      if(eraseR<0) {
+        const gp = new THREE.Plane(new THREE.Vector3(0,1,0),0);
+        const pt = new THREE.Vector3();
+        raycaster.ray.intersectPlane(gp, pt);
+        if(pt) { eraseC=Math.round(pt.x/TILE_SIZE); eraseR=Math.round(pt.z/TILE_SIZE); }
+      }
+      if(eraseR>=0&&eraseR<GRID_H&&eraseC>=0&&eraseC<GRID_W) {
+        // Удаляем: убираем 3D объект из сцены и сбрасываем в данных
+        const oldObj = tileMeshGrid[eraseR][eraseC];
+        if(oldObj) {
+          scene.remove(oldObj);
+          tileObjects = tileObjects.filter(o=>o!==oldObj);
+          tileMeshGrid[eraseR][eraseC] = null;
+        }
+        delete edCellData[edKey(eraseR,eraseC)];
+        editorGrid[eraseR][eraseC] = TILE_GRASS;
+        document.getElementById('ed-info').textContent = `🗑 Удалено [${eraseR},${eraseC}] • продолжай тапать или выйди из режима`;
+      }
+      return;
+    }
+
+    // Также удаляем в свободном режиме
+    if(edFreePlaceMode) { handleFreePlaceClick(e); return; }
+
+    const groundPlane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
+    const pt = new THREE.Vector3();
+    raycaster.ray.intersectPlane(groundPlane, pt);
+    if(pt) {
+      const c = Math.round(pt.x / TILE_SIZE);
+      const r = Math.round(pt.z / TILE_SIZE);
+      if(r>=0&&r<GRID_H&&c>=0&&c<GRID_W) editorPlaceTile(r, c);
+    }
+    return;
+  }
+
+  if (gameState !== 'playing') return;
+  
+  raycaster.setFromCamera(mouse, camera);
+  
+  // Check tile hits
+  const tileMeshes = tileObjects.filter(o => o.userData.type === 'tile');
+  const intersects = raycaster.intersectObjects(tileMeshes, true);
+  
+  let hitTile = null;
+  for (const hit of intersects) {
+    let obj = hit.object;
+    while (obj && !obj.userData.type) obj = obj.parent;
+    if (obj && obj.userData.type === 'tile') { hitTile = obj; break; }
+  }
+  
+  if (hitTile) {
+    const { row, col, tileType } = hitTile.userData;
+    
+    if (selectedTowerType && tileType === TILE_GRASS) {
+      placeTower(row, col, selectedTowerType);
+      return;
+    }
+    
+    // Check tower click
+    const towerHit = towers.find(t => t.row === row && t.col === col);
+    if (towerHit) {
+      showTowerInfo(towerHit);
+      return;
+    }
+  }
+  
+  // Check tower model click
+  const allMeshes = Object.values(towerMeshes);
+  const towerIntersects = raycaster.intersectObjects(allMeshes, true);
+  if (towerIntersects.length > 0) {
+    let obj = towerIntersects[0].object;
+    while (obj && !obj.userData.towerId) obj = obj.parent;
+    if (obj) {
+      const t = towers.find(t => t.id === obj.userData.towerId);
+      if (t) { showTowerInfo(t); return; }
+    }
+  }
+  
+  deselectAll();
+}
+
+// Editor hover highlight
+let edHoverMesh = null;
+function updateEditorHover(e) {
+  if(!editorActive) return;
+  const canvas = document.getElementById('canvas');
+  const rect = canvas.getBoundingClientRect();
+  const mouse = new THREE.Vector2(
+    ((e.clientX - rect.left) / rect.width) * 2 - 1,
+    -((e.clientY - rect.top) / rect.height) * 2 + 1
+  );
+  raycaster.setFromCamera(mouse, camera);
+  const gp = new THREE.Plane(new THREE.Vector3(0,1,0),0);
+  const pt = new THREE.Vector3();
+  raycaster.ray.intersectPlane(gp, pt);
+  if(!pt) { if(edHoverMesh) edHoverMesh.visible=false; return; }
+  const c=Math.round(pt.x/TILE_SIZE), r=Math.round(pt.z/TILE_SIZE);
+  if(r<0||r>=GRID_H||c<0||c>=GRID_W) { if(edHoverMesh) edHoverMesh.visible=false; return; }
+  if(!edHoverMesh) {
+    edHoverMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(TILE_SIZE*0.98,0.05,TILE_SIZE*0.98),
+      new THREE.MeshBasicMaterial({color:0xf5a623,transparent:true,opacity:0.35})
+    );
+    edHoverMesh.position.y=0.12;
+    addToScene(edHoverMesh);
+  }
+  // Красный в режиме ластика, оранжевый в обычном
+  edHoverMesh.material.color.setHex(edEraseMode ? 0xe74c3c : 0xf5a623);
+  edHoverMesh.material.opacity = edEraseMode ? 0.55 : 0.35;
+  edHoverMesh.visible = !edFreePlaceMode; // не показываем в свободном режиме
+  edHoverMesh.position.set(c*TILE_SIZE, 0.12, r*TILE_SIZE);
+}
+function onMouseMove(e) {
+  if (gameState !== 'playing' || !selectedTowerType) { hideHoverRange(); return; }
+  const canvas = document.getElementById('canvas');
+  const rect = canvas.getBoundingClientRect();
+  const mouse = new THREE.Vector2(
+    ((e.clientX - rect.left) / rect.width) * 2 - 1,
+    -((e.clientY - rect.top) / rect.height) * 2 + 1
+  );
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(tileObjects.filter(o => o.userData.type === 'tile'), true);
+  
+  for (const hit of intersects) {
+    let obj = hit.object;
+    while (obj && !obj.userData.type) obj = obj.parent;
+    if (obj && obj.userData.tileType === TILE_GRASS) {
+      showHoverRange(obj.userData.row, obj.userData.col, selectedTowerType);
+      return;
+    }
+  }
+  hideHoverRange();
+}
+
+// Camera drag — supports both ROTATE and PAN modes
+let pointers = {};
+let isMoving = false;
+let camMode = 'rotate'; // 'rotate' | 'pan'
+
+function onPointerDown(e) {
+  pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+  // В свободном режиме — сразу проверяем гизмо на pointerdown
+  if(edFreePlaceMode && edGizmo && edGizmo.visible && Object.keys(pointers).length === 1) {
+    const canvas = document.getElementById('canvas');
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = ((e.clientX-rect.left)/rect.width)*2-1;
+    const mouseY = -((e.clientY-rect.top)/rect.height)*2+1;
+    raycaster.setFromCamera(new THREE.Vector2(mouseX,mouseY), camera);
+    const allGizmoMeshes = [];
+    // Только ВИДИМЫЕ группы — иначе невидимые хитбоксы другого режима конфликтуют
+    edGizmoArrows.forEach(grp=>{ if(!grp.visible) return; grp.traverse(m=>{if(m.isMesh) allGizmoMeshes.push(m);}); });
+    const hits = raycaster.intersectObjects(allGizmoMeshes, false);
+    if(hits.length > 0) {
+      onGizmoDragStart(e, hits[0].object);
+      isMoving = true; // блокируем обычный drag камеры
+      return;
+    }
+  }
+
+  if (Object.keys(pointers).length === 1) {
+    isDragging = false;
+    dragStart = { x: e.clientX, y: e.clientY };
+    isMoving = false;
+  }
+}
+
+function onPointerMove(e) {
+  if (!pointers[e.pointerId]) return;
+
+  // Gizmo drag takes priority
+  if(edGizmoDragging) {
+    onGizmoDragMove(e);
+    pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+    return;
+  }
+
+  const keys = Object.keys(pointers);
+
+  if (keys.length === 2) {
+    // Pinch zoom
+    const otherKey = keys.find(k => parseInt(k) !== parseInt(e.pointerId));
+    const other = pointers[otherKey];
+    const cur = { x: e.clientX, y: e.clientY };
+    const newDist = Math.hypot(cur.x - other.x, cur.y - other.y);
+    const oldDist = Math.hypot(pointers[e.pointerId].x - other.x, pointers[e.pointerId].y - other.y);
+    if (lastPinchDist > 0) {
+      const delta = (oldDist - newDist) * 0.02;
+      camDist = Math.max(5, Math.min(35, camDist + delta));
+      updateCamera();
+    }
+    lastPinchDist = newDist;
+    pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+    return;
+  }
+
+  const dx = e.clientX - pointers[e.pointerId].x;
+  const dy = e.clientY - pointers[e.pointerId].y;
+  if (Math.abs(dx) + Math.abs(dy) > 4) isMoving = true;
+
+  if (isMoving) {
+    if (camMode === 'rotate') {
+      camAngle -= dx * 0.005;
+      camElevation = Math.max(0.15, Math.min(1.3, camElevation + dy * 0.005));
+    } else {
+      // PAN: move camTarget in the camera's XZ plane
+      const right = new THREE.Vector3();
+      const forward = new THREE.Vector3();
+      right.crossVectors(camera.getWorldDirection(forward), camera.up).normalize();
+      forward.copy(camera.getWorldDirection(new THREE.Vector3()));
+      forward.y = 0; forward.normalize();
+      right.y = 0; right.normalize();
+      const speed = camDist * 0.002;
+      camTarget.addScaledVector(right, -dx * speed);
+      camTarget.addScaledVector(forward, dy * speed);
+    }
+    updateCamera();
+  }
+  pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+}
+
+function onPointerUp(e) {
+  if(edGizmoDragging) { onGizmoDragEnd(); delete pointers[e.pointerId]; lastPinchDist=0; return; }
+  if (!isMoving && Object.keys(pointers).length === 1) {
+    onCanvasClick(e);
+  }
+  delete pointers[e.pointerId];
+  lastPinchDist = 0;
+}
+
+function onWheel(e) {
+  camDist = Math.max(5, Math.min(35, camDist + e.deltaY * 0.02));
+  updateCamera();
+}
+
+// ============================================================
+// GAME FLOW
+// ============================================================
+function startGame(mapGrid, customCellData, freeObjsData) {
+  grid = mapGrid.map(r => [...r]);
+  path = computePath(grid);
+  
+  // Reset state
+  towers = [];
+  towerMeshes = {};
+  enemies = [];
+  projectiles = [];
+  particles = [];
+  spawnQueue = [];
+  gold = 300;
+  lives = 20;
+  wave = 0;
+  waveActive = false;
+  gameSpeed = 1;
+  selectedTowerType = null;
+  selectedTower = null;
+  
+  // Build 3D map
+  buildMap(grid, customCellData || null);
+  buildReflection();
+  // Загружаем свободно размещённые объекты (декор не на сетке)
+  if (freeObjsData && freeObjsData.length > 0) {
+    freeObjsData.forEach(fo => {
+      const obj = assets.clone(fo.modelKey);
+      if (!obj) return;
+      // Применяем сохранённый scale (в редакторе scale хранится как число)
+      const sc = typeof fo.scale === 'number' ? fo.scale : 1;
+      obj.scale.set(sc, sc, sc);
+      obj.position.set(fo.pos.x, fo.pos.y, fo.pos.z);
+      if (fo.rot) obj.rotation.set(fo.rot.x, fo.rot.y, fo.rot.z);
+      obj.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+      obj.userData = { freeObj: true, modelKey: fo.modelKey };
+      scene.add(obj);
+      tileObjects.push(obj); // чтобы попало в отражение
+    });
+    buildReflection(); // перестроим отражение с учётом freeObjs
+  }
+  
+  // Show game UI
+  document.getElementById('main-menu').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
+  document.getElementById('bottom-panel').classList.remove('hidden');
+  document.getElementById('game-over-screen').classList.add('hidden');
+  document.getElementById('win-screen').classList.add('hidden');
+  document.getElementById('cam-mode-btn').classList.remove('hidden');
+  camMode = 'rotate';
+  document.getElementById('cam-mode-btn').querySelector('img').src = 'assets/icons/ic_cursor.png';
+  
+  buildBottomPanel();
+  // Update panel height CSS var so hud-bottom-right sits above it
+  requestAnimationFrame(()=>{
+    const p=document.getElementById('bottom-panel');
+    if(p){document.documentElement.style.setProperty('--panel-h', p.offsetHeight+'px'); const br=document.getElementById('hud-br'); if(br) br.style.bottom=(p.offsetHeight+14)+'px';}
+  });
+  updateHUD();
+  
+  gameState = 'playing';
+  updateCamera();
+}
+
+function triggerGameOver() {
+  gameState = 'gameover';
+  document.getElementById('go-info').textContent = `Reached Wave ${wave} of ${TOTAL_WAVES}`;
+  document.getElementById('game-over-screen').classList.remove('hidden');
+}
+
+function triggerVictory() {
+  gameState = 'win';
+  document.getElementById('win-info').textContent = `All ${TOTAL_WAVES} waves survived! Gold: 💰${gold}`;
+  document.getElementById('win-screen').classList.remove('hidden');
+}
+
+function goToMenu() {
+  gameState = 'menu';
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('bottom-panel').classList.add('hidden');
+  document.getElementById('cam-mode-btn').classList.add('hidden');
+  document.getElementById('tower-info').classList.add('hidden'); document.getElementById('tower-info').classList.remove('visible');
+  document.getElementById('game-over-screen').classList.add('hidden');
+  document.getElementById('win-screen').classList.add('hidden');
+  document.getElementById('main-menu').classList.remove('hidden');
+  hideTowerInfo();
+  deselectAll();
+}
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+function setupEvents() {
+  const canvas = document.getElementById('canvas');
+  canvas.addEventListener('pointerdown', onPointerDown);
+  canvas.addEventListener('pointermove', onPointerMove);
+  canvas.addEventListener('pointerup', onPointerUp);
+  canvas.addEventListener('pointercancel', e => delete pointers[e.pointerId]);
+  canvas.addEventListener('wheel', onWheel, { passive: true });
+  canvas.addEventListener('mousemove', e => { onMouseMove(e); updateEditorHover(e); });
+  
+  // Tab switching
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+  
+  // HUD buttons
+  document.getElementById('btn-start-wave').addEventListener('click', startWave);
+  
+  document.getElementById('cam-mode-btn').addEventListener('click', () => {
+    camMode = camMode === 'rotate' ? 'pan' : 'rotate';
+    document.getElementById('cam-mode-btn').querySelector('img').src = camMode==='rotate' ? 'assets/icons/ic_cursor.png' : 'assets/icons/ic_refresh.png';
+  });
+  
+  document.getElementById('btn-speed').addEventListener('click', () => {
+    gameSpeed = gameSpeed === 1 ? 2 : gameSpeed === 2 ? 3 : 1;
+    document.getElementById('speed-txt').textContent = `${gameSpeed}x`;
+  });
+  
+  document.getElementById('btn-exit').addEventListener('click', goToMenu);
+  
+  // Tower info
+  document.getElementById('btn-upgrade').addEventListener('click', () => {
+    if (selectedTower) upgradeTower(selectedTower);
+  });
+  document.getElementById('btn-sell').addEventListener('click', () => {
+    if (selectedTower) sellTower(selectedTower);
+  });
+  document.getElementById('btn-deselect').addEventListener('click', deselectAll);
+  
+  // Main menu
+  document.getElementById('btn-play').addEventListener('click', () => startGame(DEFAULT_MAP, DEFAULT_CELL_DATA, DEFAULT_FREE_OBJS));
+  document.getElementById('btn-maps').addEventListener('click', openMyMaps);
+  document.getElementById('btn-maps-close').addEventListener('click', () => {
+    document.getElementById('my-maps-modal').classList.add('hidden');
+  });
+  document.getElementById('btn-editor').addEventListener('click', openEditor);
+  setupEditorEvents();
+  
+  // Game over
+  document.getElementById('btn-go-retry').addEventListener('click', () => startGame(DEFAULT_MAP, DEFAULT_CELL_DATA, DEFAULT_FREE_OBJS));
+  document.getElementById('btn-go-menu').addEventListener('click', goToMenu);
+  document.getElementById('btn-win-menu').addEventListener('click', goToMenu);
+}
+
+// ============================================================
+// MY MAPS
+// ============================================================
+function openMyMaps() {
+  const modal = document.getElementById('my-maps-modal');
+  const list = document.getElementById('my-maps-list');
+  const saved = JSON.parse(localStorage.getItem('td_saved_maps') || '[]');
+  
+  if(saved.length === 0) {
+    list.innerHTML = '<div style="color:#667;text-align:center;padding:20px;">No saved maps yet.<br>Create one in the Map Editor!</div>';
+  } else {
+    list.innerHTML = '';
+    saved.forEach((map, i) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px;margin-bottom:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;';
+      row.innerHTML = `
+        <div style="flex:1">
+          <div style="font-weight:700;color:#fff;">${map.name}</div>
+          <div style="font-size:0.75rem;color:#556;">${map.date}</div>
+        </div>
+        <button style="padding:5px 12px;border-radius:4px;border:1.5px solid #f5a623;background:#f5a623;color:#000;font-size:0.8rem;font-weight:700;cursor:pointer;" data-idx="${i}" class="mm-play">▶ Play</button>
+        <button style="padding:5px 12px;border-radius:4px;border:1.5px solid #e74c3c;background:transparent;color:#e74c3c;font-size:0.8rem;font-weight:700;cursor:pointer;" data-idx="${i}" class="mm-del">🗑</button>
+      `;
+      list.appendChild(row);
+    });
+    list.querySelectorAll('.mm-play').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.idx);
+        const map = saved[idx];
+        modal.classList.add('hidden');
+        startGame(map.grid, map.cellData || null);
+      });
+    });
+    list.querySelectorAll('.mm-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.idx);
+        saved.splice(idx, 1);
+        localStorage.setItem('td_saved_maps', JSON.stringify(saved));
+        openMyMaps(); // refresh
+      });
+    });
+  }
+  modal.classList.remove('hidden');
+}
+
+// ============================================================
+// MAIN
+// ============================================================
+async function main() {
+  initThree();
+  
+  updateProgress(20, 'Loading assets...');
+  
+  assets = new AssetManager();
+  await assets.loadAll({
+    // === GRASS TILES ===
+    tile: 'assets/td/tile.glb',
+    tile_hill: 'assets/td/tile-hill.glb',
+    tile_bump: 'assets/td/tile-bump.glb',
+    tile_dirt: 'assets/td/tile-dirt.glb',
+    tile_slope: 'assets/td/tile-slope.glb',
+    // === ROAD TILES ===
+    tile_straight: 'assets/td/tile-straight.glb',
+    tile_corner_round: 'assets/td/tile-corner-round.glb',
+    tile_corner_square: 'assets/td/tile-corner-square.glb',
+    tile_corner_inner: 'assets/td/tile-corner-inner.glb',
+    tile_corner_outer: 'assets/td/tile-corner-outer.glb',
+    tile_corner_large: 'assets/td/tile-corner-large.glb',
+    tile_crossing: 'assets/td/tile-crossing.glb',
+    tile_split: 'assets/td/tile-split.glb',
+    tile_transition: 'assets/td/tile-transition.glb',
+    tile_wide_straight: 'assets/td/tile-wide-straight.glb',
+    tile_wide_corner: 'assets/td/tile-wide-corner.glb',
+    tile_wide_split: 'assets/td/tile-wide-split.glb',
+    tile_wide_transition: 'assets/td/tile-wide-transition.glb',
+    tile_straight_slope: 'assets/td/tile-straight-slope.glb',
+    tile_straight_slope_large: 'assets/td/tile-straight-slope-large.glb',
+    // === NATURE TILES ===
+    tile_tree: 'assets/td/tile-tree.glb',
+    tile_tree_double: 'assets/td/tile-tree-double.glb',
+    tile_tree_quad: 'assets/td/tile-tree-quad.glb',
+    tile_rock: 'assets/td/tile-rock.glb',
+    tile_crystal: 'assets/td/tile-crystal.glb',
+    // === SPAWN/END ===
+    tile_spawn_round: 'assets/td/tile-spawn-round.glb',
+    tile_spawn: 'assets/td/tile-spawn.glb',
+    tile_spawn_end: 'assets/td/tile-spawn-end.glb',
+    tile_spawn_end_round: 'assets/td/tile-spawn-end-round.glb',
+    tile_end_round: 'assets/td/tile-end-round.glb',
+    tile_end: 'assets/td/tile-end.glb',
+    // === RIVER ===
+    tile_river_straight: 'assets/td/tile-river-straight.glb',
+    tile_river_bridge: 'assets/td/tile-river-bridge.glb',
+    tile_river_corner: 'assets/td/tile-river-corner.glb',
+    tile_river_transition: 'assets/td/tile-river-transition.glb',
+    tile_river_slope: 'assets/td/tile-river-slope.glb',
+    tile_river_slope_large: 'assets/td/tile-river-slope-large.glb',
+    tile_river_waterfall: 'assets/td/tile-river-waterfall.glb',
+    // === SNOW TILES ===
+    snow_tile: 'assets/td/snow-tile.glb',
+    snow_tile_straight: 'assets/td/snow-tile-straight.glb',
+    snow_tile_corner_round: 'assets/td/snow-tile-corner-round.glb',
+    snow_tile_corner_square: 'assets/td/snow-tile-corner-square.glb',
+    snow_tile_corner_inner: 'assets/td/snow-tile-corner-inner.glb',
+    snow_tile_crossing: 'assets/td/snow-tile-crossing.glb',
+    snow_tile_split: 'assets/td/snow-tile-split.glb',
+    snow_tile_transition: 'assets/td/snow-tile-transition.glb',
+    snow_tile_wide_straight: 'assets/td/snow-tile-wide-straight.glb',
+    snow_tile_wide_corner: 'assets/td/snow-tile-wide-corner.glb',
+    snow_tile_wide_split: 'assets/td/snow-tile-wide-split.glb',
+    snow_tile_slope: 'assets/td/snow-tile-slope.glb',
+    snow_tile_hill: 'assets/td/snow-tile-hill.glb',
+    snow_tile_bump: 'assets/td/snow-tile-bump.glb',
+    snow_tile_dirt: 'assets/td/snow-tile-dirt.glb',
+    snow_tile_tree: 'assets/td/snow-tile-tree.glb',
+    snow_tile_tree_double: 'assets/td/snow-tile-tree-double.glb',
+    snow_tile_tree_quad: 'assets/td/snow-tile-tree-quad.glb',
+    snow_tile_rock: 'assets/td/snow-tile-rock.glb',
+    snow_tile_crystal: 'assets/td/snow-tile-crystal.glb',
+    snow_tile_spawn_round: 'assets/td/snow-tile-spawn-round.glb',
+    snow_tile_spawn: 'assets/td/snow-tile-spawn.glb',
+    snow_tile_end_round: 'assets/td/snow-tile-end-round.glb',
+    snow_tile_end: 'assets/td/snow-tile-end.glb',
+    snow_tile_river_straight: 'assets/td/snow-tile-river-straight.glb',
+    snow_tile_river_bridge: 'assets/td/snow-tile-river-bridge.glb',
+    snow_tile_river_corner: 'assets/td/snow-tile-river-corner.glb',
+    snow_tile_river_slope: 'assets/td/snow-tile-river-slope.glb',
+    snow_tile_river_slope_large: 'assets/td/snow-tile-river-slope-large.glb',
+    snow_tile_straight_slope: 'assets/td/snow-tile-straight-slope.glb',
+    snow_tile_straight_slope_large: 'assets/td/snow-tile-straight-slope-large.glb',
+    snow_tile_wide_transition: 'assets/td/snow-tile-wide-transition.glb',
+    // === DETAILS ===
+    detail_tree: 'assets/td/detail-tree.glb',
+    detail_tree_large: 'assets/td/detail-tree-large.glb',
+    detail_rocks: 'assets/td/detail-rocks.glb',
+    detail_rocks_large: 'assets/td/detail-rocks-large.glb',
+    detail_crystal: 'assets/td/detail-crystal.glb',
+    detail_crystal_large: 'assets/td/detail-crystal-large.glb',
+    detail_dirt: 'assets/td/detail-dirt.glb',
+    detail_dirt_large: 'assets/td/detail-dirt-large.glb',
+    snow_detail_tree: 'assets/td/snow-detail-tree.glb',
+    snow_detail_tree_large: 'assets/td/snow-detail-tree-large.glb',
+    snow_detail_rocks: 'assets/td/snow-detail-rocks.glb',
+    snow_detail_rocks_large: 'assets/td/snow-detail-rocks-large.glb',
+    snow_detail_crystal: 'assets/td/snow-detail-crystal.glb',
+    snow_detail_crystal_large: 'assets/td/snow-detail-crystal-large.glb',
+    // === WOOD STRUCTURES ===
+    wood_structure: 'assets/td/wood-structure.glb',
+    wood_structure_part: 'assets/td/wood-structure-part.glb',
+    wood_structure_high: 'assets/td/wood-structure-high.glb',
+    wood_structure_high_part: 'assets/td/wood-structure-high-part.glb',
+    snow_wood_structure: 'assets/td/snow-wood-structure.glb',
+    snow_wood_structure_part: 'assets/td/snow-wood-structure-part.glb',
+    snow_wood_structure_high: 'assets/td/snow-wood-structure-high.glb',
+    snow_wood_structure_high_part: 'assets/td/snow-wood-structure-high-part.glb',
+    // === ROUND TOWERS ===
+    tower_round_base: 'assets/td/tower-round-base.glb',
+    tower_round_crystals: 'assets/td/tower-round-crystals.glb',
+    tower_round_build_a: 'assets/td/tower-round-build-a.glb',
+    tower_round_build_b: 'assets/td/tower-round-build-b.glb',
+    tower_round_build_c: 'assets/td/tower-round-build-c.glb',
+    tower_round_build_d: 'assets/td/tower-round-build-d.glb',
+    tower_round_build_e: 'assets/td/tower-round-build-e.glb',
+    tower_round_build_f: 'assets/td/tower-round-build-f.glb',
+    tower_round_bottom_a: 'assets/td/tower-round-bottom-a.glb',
+    tower_round_bottom_b: 'assets/td/tower-round-bottom-b.glb',
+    tower_round_bottom_c: 'assets/td/tower-round-bottom-c.glb',
+    tower_round_middle_a: 'assets/td/tower-round-middle-a.glb',
+    tower_round_middle_b: 'assets/td/tower-round-middle-b.glb',
+    tower_round_middle_c: 'assets/td/tower-round-middle-c.glb',
+    tower_round_top_a: 'assets/td/tower-round-top-a.glb',
+    tower_round_top_b: 'assets/td/tower-round-top-b.glb',
+    tower_round_top_c: 'assets/td/tower-round-top-c.glb',
+    tower_round_roof_a: 'assets/td/tower-round-roof-a.glb',
+    tower_round_roof_b: 'assets/td/tower-round-roof-b.glb',
+    tower_round_roof_c: 'assets/td/tower-round-roof-c.glb',
+    // === SQUARE TOWERS ===
+    tower_square_build_a: 'assets/td/tower-square-build-a.glb',
+    tower_square_build_b: 'assets/td/tower-square-build-b.glb',
+    tower_square_build_c: 'assets/td/tower-square-build-c.glb',
+    tower_square_build_d: 'assets/td/tower-square-build-d.glb',
+    tower_square_build_e: 'assets/td/tower-square-build-e.glb',
+    tower_square_build_f: 'assets/td/tower-square-build-f.glb',
+    tower_square_bottom_a: 'assets/td/tower-square-bottom-a.glb',
+    tower_square_bottom_b: 'assets/td/tower-square-bottom-b.glb',
+    tower_square_bottom_c: 'assets/td/tower-square-bottom-c.glb',
+    tower_square_middle_a: 'assets/td/tower-square-middle-a.glb',
+    tower_square_middle_b: 'assets/td/tower-square-middle-b.glb',
+    tower_square_middle_c: 'assets/td/tower-square-middle-c.glb',
+    tower_square_top_a: 'assets/td/tower-square-top-a.glb',
+    tower_square_top_b: 'assets/td/tower-square-top-b.glb',
+    tower_square_top_c: 'assets/td/tower-square-top-c.glb',
+    tower_square_roof_a: 'assets/td/tower-square-roof-a.glb',
+    tower_square_roof_b: 'assets/td/tower-square-roof-b.glb',
+    tower_square_roof_c: 'assets/td/tower-square-roof-c.glb',
+    // === WEAPONS ===
+    weapon_cannon: 'assets/td/weapon-cannon.glb',
+    weapon_ballista: 'assets/td/weapon-ballista.glb',
+    weapon_turret: 'assets/td/weapon-turret.glb',
+    weapon_catapult: 'assets/td/weapon-catapult.glb',
+    // === ENEMIES ===
+    enemy_ufo_a: 'assets/td/enemy-ufo-a.glb',
+    enemy_ufo_b: 'assets/td/enemy-ufo-b.glb',
+    enemy_ufo_c: 'assets/td/enemy-ufo-c.glb',
+    enemy_ufo_d: 'assets/td/enemy-ufo-d.glb',
+    // === ANIMALS ===
+    animal_bee: 'assets/td/animal-bee.glb',
+    animal_elephant: 'assets/td/animal-elephant.glb',
+    animal_fox: 'assets/td/animal-fox.glb',
+    animal_crab: 'assets/td/animal-crab.glb',
+    animal_panda: 'assets/td/animal-panda.glb',
+    animal_penguin: 'assets/td/animal-penguin.glb',
+    animal_lion: 'assets/td/animal-lion.glb',
+    animal_monkey: 'assets/td/animal-monkey.glb',
+  });
+  
+  updateProgress(90, 'Building scene...');
+  
+  // Copy new assets from kenney kit
+  setupEvents();
+  
+  updateProgress(100, 'Ready!');
+  await new Promise(r => setTimeout(r, 500));
+  
+  document.getElementById('loading-screen').classList.add('hidden');
+  document.getElementById('main-menu').classList.remove('hidden');
+  
+  gameState = 'menu';
+  requestAnimationFrame(gameLoop);
+}
+
+main().catch(err => {
+  console.error('Fatal error:', err);
+  document.getElementById('progress-label').textContent = 'Error: ' + err.message;
+});
+</script>
+</body>
+</html>
